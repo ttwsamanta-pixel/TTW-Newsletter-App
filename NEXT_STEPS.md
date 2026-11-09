@@ -15,6 +15,8 @@ The new debug APK installed successfully on model CPH2661. The login screen open
 
 ## Files
 
+If jobs stay at `0/N pending` after setup reports ready, run the background worker. Upload the latest `automation/worker.php` and `automation/cron.php`, then add a Cloudways PHP cron for `New/automation/cron.php` every minute. Supply the real filesystem path/prefix shown by your hosting panel and the application's PHP version. The bounded cron handles already queued jobs and prevents overlapping invocations. See DEPLOYMENT.md / Cloudways cron setup; do not schedule the unlimited worker.php loop every minute.
+
 If Automation shows a configuration error, upload the latest `api/index.php` and `includes/api-diagnostics.php`, stay signed in as admin, and open `https://newsletter.travelandtourworld.com/New/api/index.php?route=/system/check`. Its read-only JSON report lists missing automation tables/columns/PHP extensions. The existing database login can work while new API tables such as api_rate_limits are still absent. Follow DATABASE_MIGRATION.md and apply only missing changes after backup.
 
 For the report listing all five automation tables and both approval columns as missing, import `migrations/002_complete_automation_setup.sql` into the existing newsletter database through phpMyAdmin after taking an export backup. The completion script preserves existing issues/users and handles existing date/edition unique indexes. Review any migration_warning result before proceeding; duplicate issues are reported and retained. Reload the setup check, then the Automation page.

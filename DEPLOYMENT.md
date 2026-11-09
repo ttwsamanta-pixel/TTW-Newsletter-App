@@ -34,9 +34,34 @@ For `/New/` hosting, use `define('APP_BASE_URL', 'https://newsletter.travelandto
 php /absolute/path/to/app/automation/worker.php
 ```
 
-Use systemd/Supervisor or an equivalent service manager with the same environment/database credentials as PHP. Start one worker; a second can process a different job concurrently. Each worker performs one article request at a time. Restrict the worker count to avoid unnecessary load on the article host. A three-minute per-job lease prevents overlap and permits recovery after a crash. HTTP connect/request timeouts are five/eighteen seconds, redirects at most three, and every hop is host/DNS validated.
+Use systemd/Supervisor or an equivalent service manager with the same environment/database credentials as PHP. Each worker performs one article request at a time. A local file lock prevents overlapping worker/cron invocations in the same app directory. A three-minute database lease permits recovery after a crash. HTTP connect/request timeouts are five/eighteen seconds, redirects at most three, and every hop is host/DNS validated.
 
 `php automation/worker.php --once` processes one queued article and exits. A scheduler may run bounded worker ticks if persistent processes are unavailable; this only services submitted jobs and never schedules newsletter creation. Batches of 30–50 articles run across individual ticks. Users poll status and can leave/reopen a job.
+
+### Cloudways cron setup
+
+Upload the latest `automation/worker.php` and `automation/cron.php`. In the Cloudways application's **Cron Job Management**, add a **PHP** job every minute that executes the absolute filesystem path to `public_html/New/automation/cron.php`. Use your real application directory from hosting Access Details; the HTTPS website URL is not a filesystem path. If the form supplies the public_html prefix itself, enter only `New/automation/cron.php` in its path field. Do not run this CLI-only script as a curl/wget job.
+
+For an Advanced crontab entry, use the application's PHP binary and real path, for example:
+
+```cron
+* * * * * /usr/bin/php8.2 /home/master/applications/YOUR_APP_DIRECTORY/public_html/New/automation/cron.php
+```
+
+Replace PHP 8.2 and YOUR_APP_DIRECTORY with the actual hosting values. This is an example, not a confirmed server path. Match the website's PHP version/extensions and use the same database configuration. The config.local.php file supplies credentials when shell environment variables are unavailable.
+
+`cron.php` runs a bounded drain: it starts at most 50 articles, stops starting new articles after 50 seconds, and exits immediately when there is no claimable work. The currently running article is allowed to finish. Overlapping cron ticks exit while the lock is held. The next minute handles any remaining articles. It never creates newsletter jobs or approves/sends newsletters.
+
+Manual commands from the `New` directory:
+
+```sh
+php automation/worker.php --drain --max-seconds=50 --max-articles=50
+php automation/cron.php
+```
+
+First run one command in SSH to confirm progress and permissions, then schedule the cron. Jobs already marked pending will be processed; do not submit the same input again just to restart them. If a crashed job has a live lease, allow up to three minutes before reclamation. Keep cron error output available until the first batch succeeds.
+
+Cloudways references: [create application cron jobs](https://support.cloudways.com/en/articles/5124057-how-to-create-cron-jobs-on-cloudways), [use the application's PHP version for cron](https://support.cloudways.com/en/articles/16145921-how-to-change-php-version-for-your-application-on-cloudways).
 
 Per-article rows record URL, section, status, result/error, attempts, start and completion timestamps. Do not add bearer tokens or passwords to logs. Monitor pending jobs, stale processing leases and worker stderr. Delete expired/revoked tokens and stale rate-limit rows using an operator-controlled retention policy. Keep job/result rows for the retention period needed for review. Unused temporary automation images and uploaded promotions need a retention cleanup policy after verifying they are not referenced by newsletters/jobs.
 
