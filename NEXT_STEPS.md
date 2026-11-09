@@ -17,6 +17,8 @@ The new debug APK installed successfully on model CPH2661. The login screen open
 
 If Automation shows a configuration error, upload the latest `api/index.php` and `includes/api-diagnostics.php`, stay signed in as admin, and open `https://newsletter.travelandtourworld.com/New/api/index.php?route=/system/check`. Its read-only JSON report lists missing automation tables/columns/PHP extensions. The existing database login can work while new API tables such as api_rate_limits are still absent. Follow DATABASE_MIGRATION.md and apply only missing changes after backup.
 
+For the report listing all five automation tables and both approval columns as missing, import `migrations/002_complete_automation_setup.sql` into the existing newsletter database through phpMyAdmin after taking an export backup. The completion script preserves existing issues/users and handles existing date/edition unique indexes. Review any migration_warning result before proceeding; duplicate issues are reported and retained. Reload the setup check, then the Automation page.
+
 - Android APK: repository Releases / v0.1.0.
 - Setup: README.md, DEPLOYMENT.md and MOBILE_SETUP.md.
 - Database: DATABASE_MIGRATION.md.

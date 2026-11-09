@@ -1,5 +1,15 @@
 # Database migration
 
+## Completing the reported missing automation setup
+
+If `/system/check` lists all five new automation tables plus `newsletters.approved_at` and `newsletters.approved_by` as missing, back up the existing database, select it in phpMyAdmin, and import **`migrations/002_complete_automation_setup.sql`**. This script can also complete a migration that stopped at an existing unique index. Do not import fixture-schema.sql or create a replacement database.
+
+The completion script adds missing approval columns, creates absent automation tables, seeds missing category slugs without overwriting existing settings, and retains equivalent date/edition unique indexes regardless of name/order. Repeated imports preserve existing rows and approvals. Existing new tables with incompatible column layouts still need inspection; `CREATE TABLE IF NOT EXISTS` does not alter their columns.
+
+If duplicate date/edition rows already exist, the script reports `migration_warning` and leaves them intact rather than forcing a unique index or deleting records. Review those rows and resolve them deliberately before enforcing uniqueness. Reopen the admin setup-check URL after importing; required tables/columns/extensions should report `ready: true`. The checker does not currently validate all indexes or worker availability.
+
+## Original one-time migration
+
 No production newsletter schema was supplied. Tables/columns were traced from the existing PHP queries; integration uses a test-only reconstructed schema. **Verify the actual database before applying the additive migration.** Never import `invoice/schema.sql` or `tests/fixture-schema.sql` into the newsletter production database.
 
 1. Export a database backup and record the deployed PHP version.
