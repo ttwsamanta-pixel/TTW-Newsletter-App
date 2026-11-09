@@ -4,7 +4,7 @@
 
 Version 0.1.1 / build 2 uses `https://newsletter.travelandtourworld.com/New/api/index.php`. The previous 0.1.0 APK used the root API location. Live checks found HTML 404 at the root and the expected JSON 401 at `/New/`. A POST with a deliberately invalid test account reached the `/New/` login handler and returned JSON `Invalid username or password.` No real account credentials were tested.
 
-Flutter analysis passed and all 10 Flutter tests passed, including a new check that the default login route targets `/New/api/index.php`. The phone was reconnected during the build. Version 0.1.1 / code 2 was installed successfully on CPH2661 and its activity launched. The package version was verified through ADB. Real-account sign-in is awaiting the user on the updated app. Earlier physical smoke checks below refer to 0.1.0.
+Flutter analysis passed and all 10 Flutter tests passed, including a new check that the default login route targets `/New/api/index.php`. The phone was reconnected during the build. Version 0.1.1 / code 2 was installed successfully on CPH2661 and its activity launched. The package version was verified through ADB. The user confirmed that an existing website account successfully opens the dashboard in the updated phone app. Earlier physical smoke checks below refer to 0.1.0.
 
 ## Original implementation checks
 
