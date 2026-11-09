@@ -33,7 +33,7 @@ function create_job(array $input, array $user): int {
     } catch(Throwable $e) { $pdo->rollBack(); throw $e; }
 }
 function promotion_signature(string $path,int $userId): string {
-    return hash_hmac('sha256',$userId.'|'.$path,getenv('TTW_API_SECRET') ?: DB_PASS);
+    return hash_hmac('sha256',$userId.'|'.$path,TTW_API_SECRET);
 }
 function read_job(int $id,array $user): array {
     $stmt=db()->prepare('SELECT * FROM automation_jobs WHERE id=?'); $stmt->execute([$id]); $job=$stmt->fetch();

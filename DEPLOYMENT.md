@@ -19,6 +19,8 @@ Use PHP 8.1+ (tested with 8.2) and MySQL/MariaDB with InnoDB. Extensions: PDO My
 
 The repository contains no production database credentials. Supply environment secrets or copy config.local.php.example to the Git-ignored config.local.php on your hosting server. Do not copy config files into mobile builds. Changing TTW_API_SECRET invalidates outstanding promotion upload signatures; stored bearer tokens use independent random values.
 
+For `/New/` hosting, use `define('APP_BASE_URL', 'https://newsletter.travelandtourworld.com/New');` inside `config.local.php`. A separate `define('TTW_API_SECRET', 'your-random-secret');` configures upload signing. These constants work without `putenv()`, which some hosts disable. The updated `config.php` preserves constants set by the local configuration. Keep the existing DB_HOST, DB_NAME, DB_USER and DB_PASS entries. Do not include a backslash in `https://`.
+
 1. Back up and apply [the database migration](DATABASE_MIGRATION.md) before enabling the new routes.
 2. Deploy root PHP files, assets, includes, automation and api. Keep the original newsletter renderer unchanged. Make uploads and storage/sessions writable by the PHP account; prevent executable uploads.
 3. Deny public access to includes/, automation/, migrations/, tests/, storage/, mobile/, docs/, all dated backup PHP files and uploaded source archives. Apache deny rules are included for new internal directories. Nginx must supply equivalent rules; `.htaccess` does not apply there. Existing uploads contain source backups, so deploy only intended media files.
