@@ -14,6 +14,7 @@ Limits: 10 login attempts/IP/minute, 120 authenticated requests/user/minute, fiv
 
 | Method | Route | Permission / behavior |
 |---|---|---|
+| GET | /system/check | admin only; read-only check of required automation tables/columns/extensions; available even if the rate-limit table has not been migrated |
 | GET | /categories | view; active categories for employees, all for admin |
 | POST | /categories | admin; create/update by optional id; category_name, category_slug, aliases (comma-separated), active, display_order |
 | GET | /newsletters | view; page query, 30 rows/page; includes today's editions and server_date |

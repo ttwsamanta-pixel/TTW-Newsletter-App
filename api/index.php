@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/automation/jobs.php';
 require_once dirname(__DIR__) . '/newsletter_renderer.php';
+require_once dirname(__DIR__) . '/includes/api-diagnostics.php';
 
 function api_reply(array $data,int $code=200): never {
     http_response_code($code); header('Content-Type: application/json; charset=utf-8');
@@ -60,7 +61,13 @@ try {
         db()->prepare('INSERT INTO api_tokens(user_id,token_hash,password_fingerprint,expires_at) VALUES(?,?,?,DATE_ADD(NOW(),INTERVAL 7 DAY))')->execute([$user['id'],hash('sha256',$token),hash('sha256',$user['password_hash'])]);
         api_reply(['token'=>$token,'expires_in'=>604800,'user'=>['id'=>(int)$user['id'],'name'=>current_user_name($user),'role'=>$user['role'],'permissions'=>user_permissions($user)]]);
     }
-    $user=api_user(); api_rate('user:'.$user['id'],120);
+    $user=api_user();
+    // Check setup before throttling: the rate-limit table itself may be missing.
+    if ($route==='/system/check' && $method==='GET') {
+        if (!is_admin($user)) api_reply(['error'=>'Administrator permission required.'],403);
+        api_reply(automation_setup_check(db()));
+    }
+    api_rate('user:'.$user['id'],120);
     if ($route==='/auth/me' && $method==='GET') api_reply(['id'=>(int)$user['id'],'name'=>current_user_name($user),'role'=>$user['role'],'permissions'=>user_permissions($user)]);
     if ($route==='/auth/logout' && $method==='POST') {
         if (isset($user['token_id'])) db()->prepare('UPDATE api_tokens SET revoked_at=NOW() WHERE id=?')->execute([$user['token_id']]);
@@ -152,4 +159,12 @@ try {
 } catch(DomainException $e) { api_reply(['error'=>'Newsletter already exists. Open existing, replace an unapproved draft, or cancel.','existing_id'=>(int)$e->getMessage()],409); }
 catch(OutOfBoundsException $e) { api_reply(['error'=>'Resource not found.'],404); }
 catch(InvalidArgumentException | JsonException $e) { api_reply(['error'=>$e instanceof JsonException ? 'Invalid JSON.' : $e->getMessage()],422); }
-catch(Throwable $e) { api_reply(['error'=>'Request failed. Check server configuration or contact the administrator.'],500); }
+catch(PDOException $e) {
+    error_log('TTW API database failure: SQLSTATE=' . (string)$e->getCode() . '; driver_code=' . (int)($e->errorInfo[1] ?? 0));
+    [$status,$message]=api_database_failure($e);
+    api_reply(['error'=>$message],$status);
+}
+catch(Throwable $e) {
+    error_log('TTW API failure: ' . get_class($e));
+    api_reply(['error'=>'Request failed. Check server configuration or contact the administrator.'],500);
+}

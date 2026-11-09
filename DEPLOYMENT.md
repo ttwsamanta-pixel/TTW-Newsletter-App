@@ -61,6 +61,7 @@ The integration suite is intended for a fresh fixture database, uses dates in 20
 ## Troubleshooting
 
 - **500 configuration error**: inspect server logs/database connectivity, extensions, and migration. API errors deliberately omit SQL/credentials.
+- **Automation database setup incomplete**: sign in as admin, then open `api/index.php?route=/system/check` beneath your app directory (for `/New/`, use `/New/api/index.php?route=/system/check`). This read-only report names missing tables/columns/extensions. Apply only missing migration changes after backup; do not reimport a partially applied migration unchanged.
 - **426 HTTPS required**: configure PHP's trusted TLS deployment metadata; do not bypass TLS for mobile.
 - **Pending jobs**: ensure worker is running with correct environment and migration. After a crashed worker, allow up to three minutes for lease recovery.
 - **Missing image**: verify original featured image/host, image limits, GD and uploads permissions. Add only an approved exact CDN hostname if necessary, retry, and review warnings.
