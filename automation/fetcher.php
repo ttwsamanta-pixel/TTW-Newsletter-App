@@ -128,8 +128,12 @@ function process_image(string $bytes, string $date, int $width, int $height): st
     $sw=(int)round($width/$scale); $sh=(int)round($height/$scale);
     imagecopyresampled($target,$src,0,0,(int)(($info[0]-$sw)/2),(int)(($info[1]-$sh)/2),$width,$height,$sw,$sh);
     ob_start(); imagejpeg($target,null,90); $output=ob_get_clean(); imagedestroy($src); imagedestroy($target);
-    $path=save_cropped_image('data:image/jpeg;base64,'.base64_encode($output),'auto_'.bin2hex(random_bytes(12)).'.jpg',$date);
-    if (!$path || !is_file(dirname(__DIR__).'/'.$path)) throw new RuntimeException('Image could not be saved.');
+    // Working files are separate from the final issue images, grouped by issue month.
+    $directory='uploads/temporary/' . date('Y/M',strtotime($date));
+    $root=dirname(__DIR__);
+    if (!is_dir($root.'/'.$directory) && !@mkdir($root.'/'.$directory,0775,true) && !is_dir($root.'/'.$directory)) throw new RuntimeException('Temporary image folder could not be created.');
+    $path=$directory.'/auto_'.bin2hex(random_bytes(12)).'.jpg';
+    if (@file_put_contents($root.'/'.$path,$output,LOCK_EX)!==strlen($output)) throw new RuntimeException('Image could not be saved.');
     return $path;
 }
 function missing_image(string $date, int $width, int $height): string {

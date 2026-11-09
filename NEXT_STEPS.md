@@ -1,6 +1,6 @@
 # Next steps
 
-For the image fallback update, follow **docs/UPDATE_0.2.1.md**. Extract the full v0.2.1 web ZIP inside the existing `/New/` directory first, keeping config.local.php and uploads, then update Android. No additional SQL is required for an already working setup. Saved newsletters use New images first, original application images second, then a placeholder.
+For separate working image folders, follow **docs/UPDATE_0.2.2.md**. Extract the full v0.2.2 ZIP inside `/New/`, keeping config.local.php, uploads and storage. New auto images go into uploads/temporary/YYYY/Mon; final images keep their existing location. No SQL import is required. Install the matching APK after deploying the backend.
 
 1. Back up the existing hosted PHP app and newsletter database.
 2. Download this repository. Upload root PHP/assets plus api/, automation/, includes/ and migrations/ beneath public_html/New/ for the current subfolder deployment. Preserve existing uploads and server-only credentials. Do not upload mobile/, tests/, source archives or caches into the public web directory.
@@ -23,7 +23,7 @@ If Automation shows a configuration error, upload the latest `api/index.php` and
 
 For the report listing all five automation tables and both approval columns as missing, import `migrations/002_complete_automation_setup.sql` into the existing newsletter database through phpMyAdmin after taking an export backup. The completion script preserves existing issues/users and handles existing date/edition unique indexes. Review any migration_warning result before proceeding; duplicate issues are reported and retained. Reload the setup check, then the Automation page.
 
-- Android APK and matching web update ZIP: repository Releases / v0.2.1.
+- Android APK and matching web update ZIP: repository Releases / v0.2.2.
 - Setup: README.md, DEPLOYMENT.md and MOBILE_SETUP.md.
 - Database: DATABASE_MIGRATION.md.
 - API: API_DOCUMENTATION.md.

@@ -1,5 +1,10 @@
 # Flutter mobile setup
 
+## Version 0.2.2 / build 5
+
+Deploy the matching backend to use uploads/temporary/YYYY/Mon for new working images. Both current and previous mobile clients accept the paths returned by the server. Install the updated APK over the existing app after deployment.
+
+
 ## Current Android update
 
 v0.2.1 / build 4 uses the server image fallback endpoint for uploaded images and newsletter previews. Deploy the matching full web ZIP inside /New before installing the APK. Use the existing website account. This release has automated validation; phone acceptance follows backend deployment.

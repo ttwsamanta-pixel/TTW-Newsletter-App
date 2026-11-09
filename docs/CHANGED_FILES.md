@@ -1,5 +1,10 @@
 # Delivery map
 
+## Version 0.2.2
+
+Changes automation/fetcher.php to write processed images into uploads/temporary/YYYY/Mon and automation/drafts.php to accept both new and legacy working paths. Adds tests/temporary-images.php; final newsletter file handling is preserved. Android version advances to 0.2.2 / build 5.
+
+
 ## Version 0.2.1
 
 Adds image.php and includes/image-paths.php; config helpers, shared newsletter renderer, editor/profile/promotion previews and Flutter image URLs now resolve New uploads, original uploads and placeholders in order. Adds PHP/HTTP/browser/Flutter regression coverage. No database migration or existing image data is changed.

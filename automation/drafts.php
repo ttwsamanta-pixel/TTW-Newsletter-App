@@ -7,16 +7,20 @@ function blank_newsletter(string $date, string $edition): array {
         'promotion_enabled'=>0,'promotion_text'=>'','promotion_url'=>'','promotion_image'=>null,
         'promotion_width'=>200,'promotion_height'=>170,'pick_news'=>[],'more_news'=>[],'categories'=>[]];
 }
+function is_automation_image_path(string $path): bool {
+    // Accept pre-update working files so existing queued jobs and uploads still work.
+    return preg_match('~^uploads/(?:temporary/)?\d{4}/[A-Za-z]{3}/auto_[a-f0-9]{24}\.jpg$~', $path)===1;
+}
 function validate_promotion_upload(array $input, array $user): void {
     $path = (string)($input['promotion_image'] ?? '');
     if ($path === '') return;
-    if (!preg_match('~^uploads/\d{4}/[A-Za-z]{3}/auto_[a-f0-9]{24}\.jpg$~', $path)
+    if (!is_automation_image_path($path)
         || !hash_equals(promotion_signature($path,(int)$user['id']), (string)($input['promotion_signature'] ?? ''))
         || !is_file(dirname(__DIR__) . '/' . $path)) throw new InvalidArgumentException('Upload the promotion again.');
     if (!filter_var($input['promotion_url'] ?? '', FILTER_VALIDATE_URL) || parse_url($input['promotion_url'],PHP_URL_SCHEME) !== 'https') throw new InvalidArgumentException('Promotion URL must use HTTPS.');
 }
 function automation_image_data(string $path): string {
-    if (!preg_match('~^uploads/\d{4}/[A-Za-z]{3}/auto_[a-f0-9]{24}\.jpg$~', $path)) throw new InvalidArgumentException('Processed image path is invalid.');
+    if (!is_automation_image_path($path)) throw new InvalidArgumentException('Processed image path is invalid.');
     $bytes = @file_get_contents(dirname(__DIR__) . '/' . $path);
     if ($bytes === false) throw new InvalidArgumentException('Processed image is missing. Retry this import.');
     return 'data:image/jpeg;base64,' . base64_encode($bytes);

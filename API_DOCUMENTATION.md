@@ -1,5 +1,10 @@
 # TTW API
 
+## Working image paths (0.2.2)
+
+New processed article images and signed promotion uploads return uploads/temporary/YYYY/Mon/auto_<24 hex characters>.jpg. The month follows the newsletter issue date. Draft apply and promotion validation accept both this format and legacy uploads/YYYY/Mon/auto_...jpg. Signatures continue to cover the exact path and user ID. Final saved images remain outside temporary/. No endpoint or database migration is required.
+
+
 ## Public uploaded images (0.2.1)
 
 `GET|HEAD /New/image.php?path=uploads%2F2026%2FNov%2Fexample.jpg&kind=header` serves the first valid image in New uploads, original uploads, or a placeholder. kind is header, pick, promotion or profile. This route is public for email HTML, requires no database connection/token, and rejects traversal or foreign-origin paths. Supported raster formats are JPEG, PNG, GIF and WebP (12 MB / 20 MP limits). Responses revalidate with ETag; X-TTW-Image-Source identifies primary, legacy or placeholder. Promotion upload URLs now use this resolver.

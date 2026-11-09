@@ -1,5 +1,10 @@
 # Validation record
 
+## Temporary image folders - 0.2.2
+
+Passed 13 focused temporary-file checks, 38 existing unit checks and 25 image fallback checks. Coverage includes final byte-preserving copies, old jobs/promotions, new paths and final-image survival after working-file deletion. Android code 5 / version 0.2.2 built successfully. No production database or uploaded files were modified.
+
+
 ## Image fallback update - 9 November 2026 (0.2.1)
 
 Passed 25 PHP fallback checks, 38 existing unit checks, PHP syntax checks, all 12 Flutter tests and clean Flutter analysis. Isolated HTTP/browser tests with JavaScript disabled verified primary/legacy/placeholder images, newsletter/profile rendering, cache recovery, HEAD and unsafe-path rejection. Android version 0.2.1 / build 4 built successfully. No production database was used. Physical acceptance awaits the matching backend upload. See UPDATE_0.2.1.md.

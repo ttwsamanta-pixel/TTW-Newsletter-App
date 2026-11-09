@@ -1,5 +1,10 @@
 # Deployment
 
+## Temporary automation images (0.2.2)
+
+New working images use uploads/temporary/YYYY/Mon, grouped by issue month; final images stay in uploads/YYYY/Mon. PHP creates folders automatically. Old paths remain readable. Delete temporary month folders only after all related jobs/imports are applied and no unsaved promotion needs them. Restart continuous workers after deployment. See docs/UPDATE_0.2.2.md.
+
+
 ## Shared images (0.2.1)
 
 Deploy image.php and includes/image-paths.php with the full web package. Images resolve from this app uploads first, then the original application uploads, then a PNG placeholder. For /New the original directory defaults to ../uploads; PHP needs read access there. An optional LEGACY_IMAGE_UPLOAD_ROOT constant in config.local.php overrides this path. No SQL or image copying is required. See docs/UPDATE_0.2.1.md.
