@@ -7,10 +7,12 @@ cd mobile
 flutter pub get
 flutter analyze
 flutter test
-flutter run --dart-define=API_URL=https://newsletter.travelandtourworld.com/api/index.php
+flutter run --dart-define=API_URL=https://newsletter.travelandtourworld.com/New/api/index.php
 ```
 
 API_URL is a build-time public URL, not a secret. Use the complete PHP controller URL without a route query. Only HTTPS is accepted. Point a staging build at a trusted HTTPS staging server rather than disabling certificate validation. Tokens use flutter_secure_storage; no MySQL credentials or scraping code are shipped to the client.
+
+Version 0.1.1 defaults to the deployed `/New/api/index.php` endpoint. Replace the older 0.1.0 APK, which used `/api/index.php` and could show an unexpected HTML response. Use the same active website user account and password; no mobile-only default credentials are created.
 
 ## Screens and state
 

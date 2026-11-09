@@ -25,7 +25,7 @@ Workflow: paste links → validate/reorder → optional promotion and manual sub
 
 `invoice/`, dated backups, uploaded ZIPs, and `app/app-release.apk` predate these changes and are not part of the new mobile source. Do not publish backup directories or test fixtures to the web server.
 
-The new test APK is [app/ttw-newsletter-automation-debug.apk](https://github.com/ttwsamanta-pixel/TTW-Newsletter-App/releases/download/v0.1.0/ttw-newsletter-automation-debug.apk), with an adjacent SHA-256 checksum. Deploy the new PHP API/migration/worker before connecting it. The old APK remains intact.
+The current test APK is [app/ttw-newsletter-automation-debug.apk](https://github.com/ttwsamanta-pixel/TTW-Newsletter-App/releases/download/v0.1.1/ttw-newsletter-automation-debug.apk), with an adjacent SHA-256 checksum. Version 0.1.1 uses the deployed `/New/api/index.php` endpoint; update older installations before testing login. Use an existing active website username/password. The original APK in app/app-release.apk remains intact.
 
 ## Validation
 

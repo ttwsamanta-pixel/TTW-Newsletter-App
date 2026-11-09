@@ -7,6 +7,11 @@ import 'package:ttw_newsletter/core/api.dart';
 import 'package:ttw_newsletter/models/newsletter.dart';
 
 void main() {
+  test('Default mobile API targets the deployed New folder', () {
+    final api = Api();
+    expect(api.uri('/auth/login').path, '/New/api/index.php');
+    expect(api.uri('/auth/login').queryParameters['route'], '/auth/login');
+  });
   test('API sends bearer and JSON to server, never article hosts', () async {
     final api = Api(
       client: MockClient((r) async {

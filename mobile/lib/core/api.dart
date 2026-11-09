@@ -17,7 +17,7 @@ class ApiException implements Exception {
 class Api {
   static const baseUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'https://newsletter.travelandtourworld.com/api/index.php',
+    defaultValue: 'https://newsletter.travelandtourworld.com/New/api/index.php',
   );
   final http.Client client;
   final String base;
