@@ -1,5 +1,10 @@
 # Delivery map
 
+## Version 0.2.1
+
+Adds image.php and includes/image-paths.php; config helpers, shared newsletter renderer, editor/profile/promotion previews and Flutter image URLs now resolve New uploads, original uploads and placeholders in order. Adds PHP/HTTP/browser/Flutter regression coverage. No database migration or existing image data is changed.
+
+
 ## Existing root files modified
 
 - `config.php`: environment overrides, saved-image validation/write checks.

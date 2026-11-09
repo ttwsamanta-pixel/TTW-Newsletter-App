@@ -12,6 +12,28 @@ void main() {
     expect(api.uri('/auth/login').path, '/New/api/index.php');
     expect(api.uri('/auth/login').queryParameters['route'], '/auth/login');
   });
+  test('Stored promotion images use the server fallback resolver', () {
+    final api = Api();
+    for (final path in [
+      'uploads/2026/Nov/banner.jpg',
+      'https://newsletter.travelandtourworld.com/uploads/2026/Nov/banner.jpg',
+    ]) {
+      final uri = Uri.parse(api.imageUrl(path));
+      expect(uri.path, '/New/image.php');
+      expect(uri.queryParameters['path'], path);
+      expect(uri.queryParameters['kind'], 'promotion');
+    }
+    expect(
+      api.imageUrl('https://external.example/image.jpg'),
+      'https://external.example/image.jpg',
+    );
+    expect(
+      api.imageUrl(
+        'https://newsletter.travelandtourworld.com/New/image.php?path=uploads%2Fbanner.jpg',
+      ),
+      'https://newsletter.travelandtourworld.com/New/image.php?path=uploads%2Fbanner.jpg',
+    );
+  });
   test('API sends bearer and JSON to server, never article hosts', () async {
     final api = Api(
       client: MockClient((r) async {

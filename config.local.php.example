@@ -7,3 +7,6 @@ define('DB_PASS', 'YOUR_DATABASE_PASSWORD');
 // Constants also work on hosting where putenv() is disabled.
 define('APP_BASE_URL', 'https://newsletter.travelandtourworld.com/New');
 define('TTW_API_SECRET', 'REPLACE_WITH_A_LONG_RANDOM_SECRET');
+// Optional only when the original uploads folder is not ../uploads relative to New:
+// define('LEGACY_IMAGE_UPLOAD_ROOT', '/absolute/path/to/public_html/uploads');
+// define('LEGACY_APP_BASE_URL', 'https://newsletter.travelandtourworld.com');

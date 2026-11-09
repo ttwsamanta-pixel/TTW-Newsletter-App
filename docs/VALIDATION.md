@@ -1,5 +1,10 @@
 # Validation record
 
+## Image fallback update - 9 November 2026 (0.2.1)
+
+Passed 25 PHP fallback checks, 38 existing unit checks, PHP syntax checks, all 12 Flutter tests and clean Flutter analysis. Isolated HTTP/browser tests with JavaScript disabled verified primary/legacy/placeholder images, newsletter/profile rendering, cache recovery, HEAD and unsafe-path rejection. Android version 0.2.1 / build 4 built successfully. No production database was used. Physical acceptance awaits the matching backend upload. See UPDATE_0.2.1.md.
+
+
 ## Section workflow and source-text update — 9 November 2026 (0.2.0)
 
 Implemented original visible-heading extraction, trailing TTW SEO suffix cleanup, Header body prefix 35 words, Pick/Hidden Preview body prefix 16 words, optional manual Email Title during drafting, and both all-links and six-step section imports. Scoped generation preserves unrelated latest draft data and named category groups. Partial previews skip an absent Header; complete newsletter layout remains shared.

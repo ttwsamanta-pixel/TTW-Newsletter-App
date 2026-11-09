@@ -1,5 +1,10 @@
 # Flutter mobile setup
 
+## Current Android update
+
+v0.2.1 / build 4 uses the server image fallback endpoint for uploaded images and newsletter previews. Deploy the matching full web ZIP inside /New before installing the APK. Use the existing website account. This release has automated validation; phone acceptance follows backend deployment.
+
+
 The `mobile/` directory contains Flutter source plus Android/iOS runners generated with Flutter 3.47.5 / Dart 3.13.4. It does not modify the old APK in `app/`.
 
 ```sh

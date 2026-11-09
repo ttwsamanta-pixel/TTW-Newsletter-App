@@ -146,7 +146,7 @@ if (!$n['categories']) {
             <div class="field" style="grid-column:1/-1"><label>Promotion Text</label><textarea name="promotion_text"><?= h($n['promotion_text']) ?></textarea></div>
           </div>
           <div class="field-label" style="margin-top:18px">Promotion Image Original Upload</div>
-          <?= original_uploader('promotion_image_data', public_upload_preview_url($n['promotion_image'] ?? null)) ?>
+          <?= original_uploader('promotion_image_data', public_upload_preview_url($n['promotion_image'] ?? null,'promotion')) ?>
           <div class="toolbar" style="margin:24px 0 0"><button class="button secondary" type="button" onclick="showStep(4)">Previous</button><button class="button" type="submit" name="after_save" value="view">Save Newsletter</button></div>
         </section>
       </form>
@@ -213,7 +213,7 @@ function pick_form(array $item): string
       </div>
       <div class="field-label" style="margin-top:14px">Pick Image 350 x 291</div>
       <input type="hidden" name="pick_existing_image[]" value="<?= h($item['image'] ?? '') ?>">
-      <?= cropper('pick_image_data[]', '350 / 291', 350, 350 / 291, public_upload_preview_url($item['image'] ?? null)) ?>
+      <?= cropper('pick_image_data[]', '350 / 291', 350, 350 / 291, public_upload_preview_url($item['image'] ?? null,'pick')) ?>
     </div>
     <?php return (string) ob_get_clean();
 }

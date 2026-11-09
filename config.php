@@ -13,7 +13,11 @@ defined('DB_PASS') || define('DB_PASS', getenv('TTW_DB_PASSWORD') ?: '');
 defined('APP_BASE_URL') || define('APP_BASE_URL', getenv('TTW_APP_BASE_URL') ?: 'https://newsletter.travelandtourworld.com');
 defined('NEWSLETTER_BASE_URL') || define('NEWSLETTER_BASE_URL', getenv('TTW_NEWSLETTER_BASE_URL') ?: 'https://www.travelandtourworld.com/newsletter');
 defined('TTW_API_SECRET') || define('TTW_API_SECRET', getenv('TTW_API_SECRET') ?: DB_PASS);
-const ASSET_VERSION = '20261109b';
+require_once __DIR__ . '/includes/image-paths.php';
+defined('LEGACY_APP_BASE_URL') || define('LEGACY_APP_BASE_URL', getenv('TTW_LEGACY_APP_BASE_URL') ?: legacy_image_base_url(APP_BASE_URL));
+defined('IMAGE_UPLOAD_ROOT') || define('IMAGE_UPLOAD_ROOT', getenv('TTW_IMAGE_UPLOAD_ROOT') ?: __DIR__ . '/uploads');
+defined('LEGACY_IMAGE_UPLOAD_ROOT') || define('LEGACY_IMAGE_UPLOAD_ROOT', getenv('TTW_LEGACY_IMAGE_UPLOAD_ROOT') ?: (rtrim(LEGACY_APP_BASE_URL,'/')!==rtrim(APP_BASE_URL,'/') ? dirname(__DIR__) . '/uploads' : ''));
+const ASSET_VERSION = '20261109c';
 
 function db(): PDO
 {
@@ -93,23 +97,24 @@ function issue_month_path(string $date): string
     return date('Y/M', strtotime($date));
 }
 
-function public_upload_url(?string $path): string
+function public_upload_url(?string $path, string $kind='header'): string
 {
     if (!$path) {
         return '';
     }
 
-    if (preg_match('/^https?:\/\//i', $path)) {
+    $relative=uploaded_image_path($path);
+    if ($relative===null && preg_match('/^https?:\/\//i', $path)) {
         return $path;
     }
 
     $base = APP_BASE_URL ?: current_base_url();
-    return rtrim($base, '/') . '/' . ltrim($path, '/');
+    return rtrim($base, '/') . '/image.php?' . http_build_query(['path'=>$relative ?? '', 'kind'=>$kind], '', '&', PHP_QUERY_RFC3986);
 }
 
-function public_upload_preview_url(?string $path): string
+function public_upload_preview_url(?string $path, string $kind='header'): string
 {
-    $url = public_upload_url($path);
+    $url = public_upload_url($path,$kind);
     if (!$url || preg_match('/^https?:\/\//i', (string) $path)) {
         return $url;
     }

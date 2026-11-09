@@ -419,9 +419,7 @@ class _SectionDraftState extends State<SectionDraftScreen> {
         (newsletter?['promotion_enabled'].toString() == '1') &&
         newsletter?['promotion_image'] != null) {
       final path = newsletter!['promotion_image'] as String;
-      image = Uri.tryParse(path)?.hasScheme == true
-          ? path
-          : Uri.parse(api.base).resolve('../$path').toString();
+      image = api.imageUrl(path);
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

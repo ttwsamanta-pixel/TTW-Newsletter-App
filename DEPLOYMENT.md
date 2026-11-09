@@ -1,5 +1,10 @@
 # Deployment
 
+## Shared images (0.2.1)
+
+Deploy image.php and includes/image-paths.php with the full web package. Images resolve from this app uploads first, then the original application uploads, then a PNG placeholder. For /New the original directory defaults to ../uploads; PHP needs read access there. An optional LEGACY_IMAGE_UPLOAD_ROOT constant in config.local.php overrides this path. No SQL or image copying is required. See docs/UPDATE_0.2.1.md.
+
+
 ## PHP server
 
 Use PHP 8.1+ (tested with 8.2) and MySQL/MariaDB with InnoDB. Extensions: PDO MySQL, cURL, DOM/libxml, mbstring, fileinfo and GD with JPEG/PNG/WebP. Serve through HTTPS. Set the PHP-FPM/Apache environment explicitly; shell-only variables will not automatically reach PHP-FPM.

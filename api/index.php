@@ -153,7 +153,7 @@ try {
         $bytes=file_get_contents($f['tmp_name']); $info=@getimagesizefromstring($bytes);
         if (!$info) throw new InvalidArgumentException('Invalid banner image.');
         $path=process_image($bytes,date('Y-m-d'),$info[0],$info[1]);
-        api_reply(['path'=>$path,'url'=>public_upload_url($path),'signature'=>promotion_signature($path,(int)$user['id'])]);
+        api_reply(['path'=>$path,'url'=>public_upload_url($path,'promotion'),'signature'=>promotion_signature($path,(int)$user['id'])]);
     }
     api_reply(['error'=>'Endpoint or method not found.'],404);
 } catch(DomainException $e) { api_reply(['error'=>'Newsletter already exists. Open existing, replace an unapproved draft, or cancel.','existing_id'=>(int)$e->getMessage()],409); }

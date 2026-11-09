@@ -43,7 +43,7 @@ function render_newsletter(array $n): string
     $edition = strtoupper($n['edition']);
     $fileName = issue_file_name($date, $edition);
     $webUrl = rtrim(NEWSLETTER_BASE_URL, '/') . '/' . issue_month_path($date) . '/' . $fileName;
-    $headerImage = public_upload_preview_url($n['header_image']) ?: rtrim(NEWSLETTER_BASE_URL, '/') . '/' . issue_month_path($date) . '/Header_' . issue_code($date, $edition) . '.jpg';
+    $headerImage = public_upload_preview_url($n['header_image'] ?: upload_month_path($date) . '/Header_' . issue_code($date,$edition) . '.jpg','header');
 
     ob_start();
     ?><!DOCTYPE html>
@@ -114,7 +114,7 @@ function render_pick_news(array $item, int $index, string $date, string $edition
     $dir = $index % 2 === 0 ? 'ltr' : 'rtl';
     $padding = $dir === 'ltr' ? '10px 5px 5px 10px' : '10px 10px 5px 10px';
     $imagePadding = $dir === 'ltr' ? '0 10px 10px 10px' : '0 0 10px 10px';
-    $image = public_upload_preview_url($item['image']) ?: rtrim(NEWSLETTER_BASE_URL, '/') . '/' . issue_month_path($date) . '/news' . ($index + 1) . '_' . issue_code($date, $edition) . '.jpg';
+    $image = public_upload_preview_url($item['image'] ?: upload_month_path($date) . '/news' . ($index+1) . '_' . issue_code($date,$edition) . '.jpg','pick');
 
     ob_start();
     ?><tr><td dir="<?= $dir ?>" height="100%" valign="top" width="100%" style="font-size:0;padding:<?= $padding ?>;text-align:left;background-color:#fff;">
@@ -150,7 +150,7 @@ function render_link_section(string $title, ?string $url, array $items): string
 
 function render_promotion(array $n): string
 {
-    $image = public_upload_preview_url($n['promotion_image']);
+    $image = public_upload_preview_url($n['promotion_image'],'promotion');
     ob_start();
     $width = max(1, (int) ($n['promotion_width'] ?? 200));
     $height = max(1, (int) ($n['promotion_height'] ?? 170));

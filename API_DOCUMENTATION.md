@@ -1,5 +1,10 @@
 # TTW API
 
+## Public uploaded images (0.2.1)
+
+`GET|HEAD /New/image.php?path=uploads%2F2026%2FNov%2Fexample.jpg&kind=header` serves the first valid image in New uploads, original uploads, or a placeholder. kind is header, pick, promotion or profile. This route is public for email HTML, requires no database connection/token, and rejects traversal or foreign-origin paths. Supported raster formats are JPEG, PNG, GIF and WebP (12 MB / 20 MP limits). Responses revalidate with ETag; X-TTW-Image-Source identifies primary, legacy or placeholder. Promotion upload URLs now use this resolver.
+
+
 Base URL: `https://your-host/api/index.php`. Use `?route=/auth/login` etc. Apache also supports `/api/auth/login` when `api/.htaccess` is enabled. The Flutter client uses query routing. Send JSON with `Content-Type: application/json`; uploads use multipart/form-data. API responses are JSON except HTML preview.
 
 ## Authentication and security

@@ -225,7 +225,7 @@ function avatar_html(?array $user = null, string $class = 'avatar'): string
     if ($user === null) {
         $user = auth_user();
     }
-    $photo = public_upload_url($user['photo'] ?? null);
+    $photo = public_upload_url($user['photo'] ?? null,'profile');
     if ($photo) {
         return '<div class="' . h($class) . '"><img src="' . h($photo) . '" alt="Profile"></div>';
     }

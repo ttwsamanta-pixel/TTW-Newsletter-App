@@ -31,6 +31,19 @@ class Api {
   }
   Uri uri(String route, [Map<String, String> query = const {}]) =>
       Uri.parse(base).replace(queryParameters: {'route': route, ...query});
+
+  /// Uploaded images use the server's New -> original uploads -> placeholder resolver.
+  String imageUrl(String path, {String kind = 'promotion'}) {
+    final value = Uri.tryParse(path);
+    final app = Uri.parse(base).resolve('../');
+    if (value != null && value.hasScheme && value.host != app.host) return path;
+    if (value != null && value.path.endsWith('/image.php')) return path;
+    return app
+        .resolve('image.php')
+        .replace(queryParameters: {'path': path, 'kind': kind})
+        .toString();
+  }
+
   Map<String, String> get headers => {
     'Accept': 'application/json',
     if (token != null) 'Authorization': 'Bearer $token',

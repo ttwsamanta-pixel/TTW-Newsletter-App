@@ -25,7 +25,7 @@ Workflow: paste links → validate/reorder → optional promotion and manual sub
 
 `invoice/`, dated backups, uploaded ZIPs, and `app/app-release.apk` predate these changes and are not part of the new mobile source. Do not publish backup directories or test fixtures to the web server.
 
-The current test APK is [app/ttw-newsletter-automation-debug.apk](https://github.com/ttwsamanta-pixel/TTW-Newsletter-App/releases/download/v0.2.0/ttw-newsletter-automation-debug.apk), with an adjacent SHA-256 checksum. Version 0.2.0 adds section-by-section creation and content-based snippets, and uses `/New/api/index.php`. Upload the matching [web update ZIP](https://github.com/ttwsamanta-pixel/TTW-Newsletter-App/releases/download/v0.2.0/ttw-web-update-0.2.0.zip) into `/New/` before installing the APK. Your server-only config.local.php and existing data are not included or replaced. Use an existing active website username/password.
+The current test APK is [app/ttw-newsletter-automation-debug.apk](https://github.com/ttwsamanta-pixel/TTW-Newsletter-App/releases/download/v0.2.1/ttw-newsletter-automation-debug.apk), with an adjacent SHA-256 checksum. Version 0.2.1 adds New-to-original image fallback alongside section-by-section creation and content-based snippets, and uses `/New/api/index.php`. Upload the matching [web update ZIP](https://github.com/ttwsamanta-pixel/TTW-Newsletter-App/releases/download/v0.2.1/ttw-web-update-0.2.1.zip) into `/New/` before installing the APK. Your server-only config.local.php and existing data are not included or replaced. Use an existing active website username/password.
 
 ## Creating sections as links arrive
 
@@ -33,7 +33,7 @@ Choose **All links at once** or **Section by section**. Web section mode uses th
 
 Titles prefer the article's visible H1 and strip only a trailing `- Travel And Tour World` / equivalent site separator. Header descriptions use the first 35 article-body words; Pick News descriptions and Hidden Preview Text use the first 16, followed by `...`. Metadata excerpts are not used for these fields. Email Title stays manual and optional while drafting/generating; add it before approval. Existing issues are not rewritten automatically: open a draft and use **Import / refresh** to refetch a selected section's prefilled links.
 
-No additional SQL migration is needed for 0.2.0 if the earlier automation setup check is already ready. See [upgrade instructions](docs/UPDATE_0.2.0.md).
+No additional SQL migration is needed for 0.2.1 if the earlier automation setup check is already ready. See [upgrade instructions](docs/UPDATE_0.2.1.md).
 
 ## Validation
 
