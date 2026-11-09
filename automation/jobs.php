@@ -3,6 +3,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/fetcher.php';
 require_once dirname(__DIR__) . '/includes/newsletter-service.php';
 require_once dirname(__DIR__) . '/includes/security.php';
+require_once dirname(__DIR__) . '/newsletter_renderer.php';
+require_once __DIR__ . '/drafts.php';
 
 function master_categories(): array {
     return db()->query('SELECT * FROM newsletter_categories_master ORDER BY display_order,id')->fetchAll();
@@ -10,18 +12,19 @@ function master_categories(): array {
 function create_job(array $input, array $user): int {
     $date=(string)($input['newsletter_date'] ?? ''); $edition=$input['edition'] ?? '';
     if (!valid_issue_date($date) || !in_array($edition,['M','E'],true)) throw new InvalidArgumentException('Choose a valid date and edition.');
-    if (trim($input['subject_title'] ?? '')==='' || trim($input['hidden_text'] ?? '')==='') throw new InvalidArgumentException('Email subject and description are required.');
-    if (strlen($input['subject_title'])>250 || strlen($input['hidden_text'])>5000) throw new InvalidArgumentException('Subject or description is too long.');
-    $parsed=parse_newsletter_input((string)($input['text'] ?? ''),master_categories());
+    if (!is_string($input['subject_title'] ?? '') || strlen($input['subject_title'] ?? '')>250) throw new InvalidArgumentException('Email Title must be at most 250 characters.');
+    $parsed=parse_automation_input($input,master_categories());
     if ($parsed['errors']) throw new InvalidArgumentException(implode("\n",$parsed['errors']));
-    $promotion=(string)($input['promotion_image'] ?? '');
-    if ($promotion!=='') {
-        // Uploads are bound to their creating account by a signed path.
-        $signature=(string)($input['promotion_signature'] ?? '');
-        if (!preg_match('~^uploads/\d{4}/[A-Za-z]{3}/auto_[a-f0-9]{24}\.jpg$~',$promotion) || !hash_equals(promotion_signature($promotion,(int)$user['id']),$signature) || !is_file(dirname(__DIR__).'/'.$promotion)) throw new InvalidArgumentException('Upload the promotion again.');
-        if (!filter_var($input['promotion_url'] ?? '',FILTER_VALIDATE_URL) || parse_url($input['promotion_url'],PHP_URL_SCHEME)!=='https') throw new InvalidArgumentException('Promotion URL must use HTTPS.');
+    validate_promotion_upload($input,$user);
+    $target=(int)($input['target_id'] ?? 0);
+    if ($target) {
+        if (($input['input_mode'] ?? '') !== 'section' || !can('edit',$user)) throw new InvalidArgumentException('Edit permission is required to import into an existing draft.');
+        $n=load_newsletter($target);
+        if (!$n || $n['newsletter_date']!==$date || $n['edition']!==$edition) throw new InvalidArgumentException('The target draft does not match the date and edition.');
+        if ($n['approved_at']) throw new InvalidArgumentException('Reopen the approved issue as a draft before importing sections.');
     }
-    $payload=array_intersect_key($input,array_flip(['newsletter_date','edition','subject_title','hidden_text','promotion_image','promotion_url','promotion_text']));
+    $payload=array_intersect_key($input,array_flip(['newsletter_date','edition','subject_title','promotion_image','promotion_url','promotion_text','input_mode','section','category_id']));
+    $payload['target_id']=$target;
     $payload['warnings']=$parsed['warnings'];
     $pdo=db(); $pdo->beginTransaction();
     try {
@@ -61,10 +64,10 @@ function worker_tick(): bool {
             // Recheck user state before making network requests.
             $u=$pdo->prepare('SELECT * FROM users WHERE id=? AND status="active"'); $u->execute([$job['user_id']]); $user=$u->fetch();
             if (!$user || !can('create',$user)) throw new RuntimeException('Job owner no longer has create permission.');
-            $result=extract_article(safe_fetch(article_url($a['url'])),$a['url']);
+            $result=extract_article(safe_fetch(article_url($a['url'])),$a['url'],$a['section']);
             if ($result['title']==='') throw new RuntimeException('Original article title not found.');
             $warnings=[];
-            if ($result['description']==='' && in_array($a['section'],['header','pick'])) $warnings[]='Original description not found';
+            if ($result['description']==='' && in_array($a['section'],['header','pick'])) $warnings[]='Original article body not found; description could not be created';
             if (in_array($a['section'],['header','pick'])) {
                 [$w,$h]=$a['section']==='header' ? [610,380] : [350,291];
                 try {
@@ -110,39 +113,23 @@ function generate_job(int $id,array $user,array $options): int {
         if ($job['newsletter_id']) { $pdo->commit(); return (int)$job['newsletter_id']; }
         if (!in_array($job['status'],['completed','completed_with_warnings'],true)) throw new InvalidArgumentException('Finish or retry failed articles before generation.');
         if ($job['status']==='completed_with_warnings' && empty($options['accept_warnings'])) throw new InvalidArgumentException('Review and acknowledge article warnings first.');
-        $data=$job['payload']; $data['id']=0;
-        $stmt=$pdo->prepare('SELECT * FROM newsletters WHERE newsletter_date=? AND edition=? FOR UPDATE'); $stmt->execute([$data['newsletter_date'],$data['edition']]); $existing=$stmt->fetch();
+        $payload=$job['payload'];
+        $partial=($payload['input_mode'] ?? 'all')==='section';
+        $target=$partial ? (int)($payload['target_id'] ?? 0) : 0;
+        if ($target) {
+            $stmt=$pdo->prepare('SELECT * FROM newsletters WHERE id=? FOR UPDATE'); $stmt->execute([$target]);
+        } else {
+            $stmt=$pdo->prepare('SELECT * FROM newsletters WHERE newsletter_date=? AND edition=? FOR UPDATE'); $stmt->execute([$payload['newsletter_date'],$payload['edition']]);
+        }
+        $existing=$stmt->fetch() ?: null;
+        if ($target && !$existing) throw new OutOfBoundsException('The target draft no longer exists.');
         if ($existing) {
-            if (empty($options['replace_draft']) || !can('edit',$user) || $existing['approved_at']) throw new DomainException((string)$existing['id']);
-            $data['id']=(int)$existing['id'];
+            if (!can('edit',$user) || $existing['approved_at']) throw new InvalidArgumentException('An approved issue cannot be replaced. Reopen it as a draft before editing.');
+            if (!$target && empty($options['replace_draft'])) throw new DomainException((string)$existing['id']);
+            if ($existing['newsletter_date']!==$payload['newsletter_date'] || $existing['edition']!==$payload['edition']) throw new InvalidArgumentException('The target draft date or edition changed. Create a new import.');
+            $existing=load_newsletter((int)$existing['id']);
         }
-        $data['promotion_enabled']=empty($data['promotion_image']) ? 0 : 1;
-        if (!empty($data['promotion_image'])) {
-            $bytes=file_get_contents(dirname(__DIR__).'/'.$data['promotion_image']);
-            $data['promotion_image_data']='data:image/jpeg;base64,'.base64_encode($bytes);
-        }
-        $data['category_name']=$data['category_key']=$data['category_url']=[];
-        $categories=[];
-        foreach($job['articles'] as $a) {
-            $r=$a['result']; $url=$r['canonical_url'];
-            if ($a['section']==='header') {
-                $data['header_title']=$r['title']; $data['header_description']=$r['description']; $data['header_url']=$url;
-                $data['header_image_data']='data:image/jpeg;base64,'.base64_encode(file_get_contents(dirname(__DIR__).'/'.$r['image']));
-            } elseif ($a['section']==='pick') {
-                $data['pick_title'][]=$r['title']; $data['pick_description'][]=$r['description']; $data['pick_url'][]=$url;
-                $data['pick_image_data'][]='data:image/jpeg;base64,'.base64_encode(file_get_contents(dirname(__DIR__).'/'.$r['image']));
-            } elseif ($a['section']==='more') { $data['more_title'][]=$r['title']; $data['more_url'][]=$url; }
-            else {
-                $key='master_'.$a['category_id'];
-                if (!isset($categories[$key])) {
-                    $m=$pdo->prepare('SELECT * FROM newsletter_categories_master WHERE id=? AND active=1'); $m->execute([$a['category_id']]); $master=$m->fetch();
-                    if (!$master) throw new InvalidArgumentException('A category was deactivated. Create a new job.');
-                    $categories[$key]=true; $data['category_name'][]=$master['category_name']; $data['category_key'][]=$key;
-                    $data['category_url'][]='https://www.travelandtourworld.com/news/article/category/'.$master['category_slug'].'/';
-                }
-                $data['category_news_title'][$key][]=$r['title']; $data['category_news_url'][$key][]=$url;
-            }
-        }
+        $data=automation_draft_data($job,$existing);
         $newsletterId=persist_newsletter($pdo,$data,$user,false,true);
         $pdo->prepare('UPDATE automation_jobs SET newsletter_id=? WHERE id=?')->execute([$newsletterId,$id]);
         $pdo->commit(); return $newsletterId;

@@ -13,7 +13,7 @@ defined('DB_PASS') || define('DB_PASS', getenv('TTW_DB_PASSWORD') ?: '');
 defined('APP_BASE_URL') || define('APP_BASE_URL', getenv('TTW_APP_BASE_URL') ?: 'https://newsletter.travelandtourworld.com');
 defined('NEWSLETTER_BASE_URL') || define('NEWSLETTER_BASE_URL', getenv('TTW_NEWSLETTER_BASE_URL') ?: 'https://www.travelandtourworld.com/newsletter');
 defined('TTW_API_SECRET') || define('TTW_API_SECRET', getenv('TTW_API_SECRET') ?: DB_PASS);
-const ASSET_VERSION = '20260924a';
+const ASSET_VERSION = '20261109b';
 
 function db(): PDO
 {

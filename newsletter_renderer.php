@@ -74,7 +74,9 @@ function render_newsletter(array $n): string
 <tr><td height="4"></td></tr>
 <tr><td><h2 style="margin:5px 0;font-family:'Roboto',sans-serif;font-size:14px;line-height:20px;color:#555;font-weight:600;text-align:center;">DAILY TRAVEL NEWS UPDATE</h2></td></tr>
 <tr><td><div style="border-bottom:2px solid #b90005;margin:0 15% 10px 15%"></div></td></tr>
+<?php if (trim((string)$n['header_title']) !== ''): ?>
 <?= render_header_story($n, $headerImage) ?>
+<?php endif; ?>
 <?php foreach ($n['pick_news'] as $index => $item): ?>
 <?= render_pick_news($item, $index, $date, $edition) ?>
 <?php endforeach; ?>

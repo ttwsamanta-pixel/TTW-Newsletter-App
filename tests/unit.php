@@ -23,12 +23,32 @@ $many="header:\n{$base}head/\nPick News:\n";for($i=0;$i<50;$i++)$many.=$base.$i.
 check(count(parse_newsletter_input($many,$master)['errors'])===1,'Maximum 50 URLs enforced');
 $html='<html><head><meta property="og:title" content="Original &amp; Exact Title"><meta name="description" content="Original excerpt."><meta property="og:image" content="/images/featured.jpg"><link rel="canonical" href="'.$base.'canonical/"></head><body><article><h1>Fallback</h1><p>Fallback text</p></article></body></html>';
 $article=extract_article($html,$base.'test/');
-check($article['title']==='Original & Exact Title','Original title extraction');
-check($article['description']==='Original excerpt.','Original description extraction');
+check($article['title']==='Fallback','Visible heading takes precedence over SEO title');
+check($article['description']==='Fallback text...','Description comes from article content, not metadata excerpt');
 check($article['featured_image']==='https://www.travelandtourworld.com/images/featured.jpg','Relative image extraction');
 check($article['canonical_url']===$base.'canonical/','Canonical extraction');
 $a=extract_article('<article><h1>Original heading</h1><p>Original paragraph</p></article>',$base.'test/');
-check($a['title']==='Original heading' && $a['description']==='Original paragraph','DOM fallback extraction');
+check($a['title']==='Original heading' && $a['description']==='Original paragraph...','DOM content extraction');
+$words=implode(' ',array_map(fn($i)=>'word'.$i,range(1,70)));
+$html='<meta property="og:title" content="SEO title - Travel And Tour World"><meta name="description" content="Do not use this excerpt"><article><h1>Original Visible Title - Travel And Tour World</h1><div class="single-news-content"><figure><p>Image credit not body</p></figure><p>'.$words.'</p><aside><p>Ignore related content</p></aside></div></article>';
+$header=extract_article($html,$base.'body/','header');$pick=extract_article($html,$base.'body/','pick');
+check($header['title']==='Original Visible Title','Trailing site suffix removed');
+check($header['description']===implode(' ',array_slice(explode(' ',$words),0,35)).'...','Header uses exactly 35 opening body words');
+check($pick['description']===implode(' ',array_slice(explode(' ',$words),0,16)).'...','Pick News uses exactly 16 opening body words');
+check($header['hidden_text']===$pick['description'],'Hidden Preview Text uses the same 16 opening header words');
+check(!str_contains($header['content'],'Image credit') && !str_contains($header['content'],'related content'),'Captions and related blocks excluded');
+check(clean_article_title('Travel And Tour World welcomes partners')==='Travel And Tour World welcomes partners','Brand text inside original title is retained');
+check(clean_article_title('Original | Travel And Tour World')==='Original','Fallback SEO separator stripped');
+$noBody=extract_article('<h1>Latest Travel News</h1><meta name="description" content="Listing page">',$base.'redirect/');
+check($noBody['title']==='' && $noBody['description']==='','News-list redirects cannot become article content');
+$emptyBody=extract_article('<article><h1>Title</h1></article><meta name="description" content="Excerpt">',$base.'empty/');
+check($emptyBody['description']==='','Missing body does not fall back to excerpt');
+$partial=parse_automation_input(['input_mode'=>'section','section'=>'more','text'=>$base.'first/' . "\n" . $base.'second/'],$master);
+check($partial['total']===2 && !$partial['errors'],'More News can be imported before Header');
+$partial=parse_automation_input(['input_mode'=>'section','section'=>'category','category_id'=>1,'text'=>$base.'category/'],$master);
+check($partial['articles'][0]['category_id']===1 && !$partial['errors'],'Single-category link input resolves master category');
+$mixed=parse_automation_input(['input_mode'=>'section','section'=>'pick','text'=>"header:\n{$base}header/"],$master);
+check((bool)$mixed['errors'],'Section import rejects links under a different section');
 foreach(['https://127.0.0.1/test','https://www.travelandtourworld.com.evil.test/test','http://www.travelandtourworld.com/test','https://user@www.travelandtourworld.com/test'] as $unsafe){try{safe_fetch($unsafe);check(false,'Unsafe URL permitted');}catch(RuntimeException $e){check(true,'Unsafe URL blocked');}}
 try{process_image('not an image','2026-11-06',610,380);check(false,'Invalid image permitted');}catch(RuntimeException $e){check(true,'Invalid image rejected');}
 check(valid_issue_date('2026-11-06') && !valid_issue_date('2026-02-30'),'Strict date validation');

@@ -43,6 +43,7 @@ $('#startJob').onclick=()=>action($('#startJob'),async()=>{
 async function poll(){clearTimeout(timer);try{
   currentJob=await api('/automation/jobs/'+jobId);const j=currentJob;$('#jobTitle').textContent=j.newsletter_id?'Newsletter Draft Created':j.status==='failed'?'Review article failures':'Creating Newsletter…';$('#jobStatus').textContent=`${j.completed}/${j.total} articles · ${j.status.replaceAll('_',' ')}`;$('#jobProgress').value=j.progress;
   $('#articleResults').innerHTML=j.articles.map(a=>`<article class="auto-article"><strong>${esc(a.result?.title||a.url)}</strong><small>${esc(a.section)} · ${esc(a.status)}</small>${a.error_message?`<p>${esc(a.error_message)}</p>`:''}<details><summary>Article details</summary><p>${esc(a.url)}</p><p>${esc(a.result?.description||'Description not available yet')}</p><p>Title: ${a.result?.title?'found':'pending / missing'} · Image: ${a.result?.featured_image?'found':'missing / not required'}</p></details></article>`).join('');
+  const header=j.articles.find(a=>a.section==='header');if(header?.result?.hidden_text)$('#automationForm').elements.hidden_text.value=header.result.hidden_text;$('#generate').textContent=j.payload?.input_mode==='section'?'Save imported section':'Generate Draft ?';
   const done=['completed','completed_with_warnings','failed'].includes(j.status);$('#generate').hidden=!done||j.status==='failed'||!!j.newsletter_id;$('#retry').hidden=!done||j.status==='completed'||!!j.newsletter_id;$('#warningConsent').hidden=j.status!=='completed_with_warnings'||!!j.newsletter_id;
   if(j.newsletter_id)openPreview(j.newsletter_id);if(!done)timer=setTimeout(poll,2500);
 }catch(e){message(e.message);}}
@@ -57,7 +58,7 @@ $('#approve').onclick=()=>action($('#approve'),async()=>{await api(`/newsletters
 async function refresh(){
   const [n,j]=await Promise.all([api('/newsletters'),api('/automation/jobs')]);
   $('#today').innerHTML=['M','E'].map(e=>{const row=n.today.find(x=>x.edition===e);return `<div class="edition-card"><h3>${e==='M'?'☀ Morning':'☾ Evening'} Edition</h3>${row?(row.approved_at?'✓ Approved':'✓ Draft created'):'○ Not created'}<small> · ${esc(n.server_date)}</small></div>`;}).join('');
-  $('#recentNews').innerHTML=n.newsletters.slice(0,5).map(r=>`<div class="auto-recent"><strong>${esc(r.newsletter_date)} · ${r.edition==='M'?'Morning':'Evening'}</strong><small>${esc(r.subject_title)}</small><a href="view.php?id=${Number(r.id)}">${r.approved_at?'Approved':'Draft'} · Preview →</a></div>`).join('')||'<p>No newsletters yet.</p>';
+  $('#recentNews').innerHTML=n.newsletters.slice(0,5).map(r=>`<div class="auto-recent"><strong>${esc(r.newsletter_date)} · ${r.edition==='M'?'Morning':'Evening'}</strong><small>${esc(r.subject_title||'Email Title not added')}</small><a href="view.php?id=${Number(r.id)}">${r.approved_at?'Approved':'Draft'} · Preview →</a></div>`).join('')||'<p>No newsletters yet.</p>';
   $('#recentJobs').innerHTML=j.jobs.map(r=>`<div class="auto-recent"><button type="button" data-job="${Number(r.id)}">Job #${Number(r.id)} · ${esc(r.status)}<small>${r.completed}/${r.total} processed</small></button></div>`).join('')||'<p>No jobs yet.</p>';
 }
 $('#recentJobs').onclick=e=>{const b=e.target.closest('[data-job]');if(b){jobId=b.dataset.job;stage(3);$('#preview').hidden=true;poll();}};

@@ -22,7 +22,6 @@ if(process.env.TTW_DB_NAME!=='ttw_automation_test')throw Error('Use isolated tes
   await page.locator('#parse').click();await page.locator('#parseSummary').waitFor();
   if(!await page.locator('#parseSummary').innerText().then(t=>t.includes('2 articles')))throw Error('Parse count missing');
   await page.locator('#toDetails').click();await page.locator('[name=subject_title]').fill('Browser acceptance newsletter');
-  await page.locator('[name=hidden_text]').fill('Original travel news reviewed in browser.');
   await page.locator('#banner').setInputFiles('TTW-Logo.png');await page.locator('#bannerPreview').waitFor();
   await page.locator('[name=promotion_url]').fill('https://www.travelandtourworld.com/ttwapp/');
   await page.locator('#startJob').click();await page.locator('#jobStatus').waitFor();

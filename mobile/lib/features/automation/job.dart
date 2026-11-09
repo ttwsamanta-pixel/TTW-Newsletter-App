@@ -11,7 +11,13 @@ import '../newsletter_preview/preview.dart';
 class JobScreen extends StatefulWidget {
   final Auth auth;
   final int id;
-  const JobScreen({super.key, required this.auth, required this.id});
+  final bool returnToEditor;
+  const JobScreen({
+    super.key,
+    required this.auth,
+    required this.id,
+    this.returnToEditor = false,
+  });
   @override
   State<JobScreen> createState() => _JobState();
 }
@@ -70,15 +76,23 @@ class _JobState extends State<JobScreen> {
         '/automation/jobs/${widget.id}/generate',
         data: {'accept_warnings': accepted, 'replace_draft': replace},
       );
-      if (mounted) await preview(int.parse('${r['newsletter_id']}'));
+      if (mounted) {
+        if (widget.returnToEditor) {
+          Navigator.pop(context);
+          return;
+        }
+        await preview(int.parse('${r['newsletter_id']}'));
+      }
     } on ApiException catch (e) {
       if (e.existingId != null && mounted) {
         final choice = await showDialog<String>(
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text('Newsletter already exists'),
-            content: const Text(
-              'Open the existing issue, replace its unapproved draft, or cancel.',
+            content: Text(
+              job?.isSectionImport == true
+                  ? 'Open the existing draft, update only the selected section, or cancel.'
+                  : 'Open the existing issue, replace its unapproved draft, or cancel.',
             ),
             actions: [
               TextButton(
@@ -92,7 +106,11 @@ class _JobState extends State<JobScreen> {
               if (widget.auth.can('edit'))
                 FilledButton(
                   onPressed: () => Navigator.pop(ctx, 'replace'),
-                  child: const Text('Replace draft'),
+                  child: Text(
+                    job?.isSectionImport == true
+                        ? 'Update section'
+                        : 'Replace draft',
+                  ),
                 ),
             ],
           ),
@@ -166,10 +184,14 @@ class _JobState extends State<JobScreen> {
                   const SizedBox(height: 24),
                   Text(
                     j?.newsletterId != null
-                        ? 'Newsletter Draft Created'
+                        ? (j?.isSectionImport == true
+                              ? 'Section Saved'
+                              : 'Newsletter Draft Created')
                         : j?.finished == true
                         ? 'Review Newsletter Data'
-                        : 'Creating Newsletter…',
+                        : (j?.isSectionImport == true
+                              ? 'Importing Section…'
+                              : 'Creating Newsletter…'),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
@@ -298,12 +320,18 @@ class _JobState extends State<JobScreen> {
               const SizedBox(height: 16),
               if (j.newsletterId != null)
                 PrimaryButton(
-                  'Preview Newsletter  →',
-                  onPressed: () => preview(j.newsletterId!),
+                  widget.returnToEditor
+                      ? 'Return to section editor'
+                      : 'Preview Newsletter  →',
+                  onPressed: () => widget.returnToEditor
+                      ? Navigator.pop(context)
+                      : preview(j.newsletterId!),
                 )
               else if (j.finished && j.status != 'failed')
                 PrimaryButton(
-                  'Generate Draft  →',
+                  j.isSectionImport
+                      ? 'Save imported section'
+                      : 'Generate Draft  →',
                   busy: busy,
                   onPressed: j.status == 'completed_with_warnings' && !accepted
                       ? null

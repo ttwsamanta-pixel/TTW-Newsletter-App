@@ -58,6 +58,7 @@ if (!$n['categories']) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= $id ? 'Edit' : 'Create' ?> Newsletter</title>
 <link rel="stylesheet" href="<?= h(asset_url('assets/app.css')) ?>">
+<link rel="stylesheet" href="<?= h(asset_url('assets/automation.css')) ?>">
 </head>
 <body>
 <div class="app">
@@ -92,6 +93,7 @@ if (!$n['categories']) {
         </section>
 
         <section class="section">
+          <?= section_import_box('header', $n) ?>
           <div class="grid">
             <div class="field"><label>Header News Title</label><input name="header_title" value="<?= h($n['header_title']) ?>"></div>
             <div class="field"><label>Header News URL</label><input name="header_url" value="<?= h($n['header_url']) ?>"></div>
@@ -103,6 +105,7 @@ if (!$n['categories']) {
         </section>
 
         <section class="section">
+          <?= section_import_box('pick', $n) ?>
           <div id="pickNews" class="repeat-list">
             <?php foreach ($n['pick_news'] as $item): ?>
               <?= pick_form($item) ?>
@@ -113,6 +116,7 @@ if (!$n['categories']) {
         </section>
 
         <section class="section">
+          <?= section_import_box('more', $n) ?>
           <div id="moreNews" class="repeat-list">
             <?php foreach ($n['more_news'] as $item): ?>
               <?= link_form('more', $item) ?>
@@ -123,6 +127,7 @@ if (!$n['categories']) {
         </section>
 
         <section class="section">
+          <?= section_import_box('category', $n) ?>
           <div id="categories" class="repeat-list">
             <?php foreach ($n['categories'] as $category): ?>
               <?= category_form($category) ?>
@@ -155,8 +160,10 @@ if (!$n['categories']) {
 <template id="categoryNewsTemplate"><?= category_news_form('__KEY__', ['title' => '', 'url' => '']) ?></template>
 <script src="<?= h(asset_url('assets/app.js')) ?>"></script>
 <script>
+window.ttwCsrf = <?= json_encode(csrf_token()) ?>;
 window.existingNewsletterEditions = <?= json_encode($existingEditions, JSON_UNESCAPED_SLASHES) ?>;
 </script>
+<script src="<?= h(asset_url('assets/section-import.js')) ?>"></script>
 <nav class="mobile-bottom-nav">
   <a href="newsletters.php"><span><?= nav_icon('news') ?></span>News</a>
   <a class="active" href="editor.php"><span><?= nav_icon('create') ?></span>Create</a>
@@ -258,3 +265,34 @@ function category_news_form(string $key, array $item): string
     <?php return (string) ob_get_clean();
 }
 
+
+function section_import_box(string $section, array $n): string
+{
+    if (!can('create')) return '';
+    $labels = ['header'=>'Header', 'pick'=>'Pick News', 'more'=>'MTN / More News', 'category'=>'Categories'];
+    $links = [];
+    if ($section === 'header' && !empty($n['header_url'])) $links[] = $n['header_url'];
+    if ($section === 'pick' || $section === 'more') foreach ($n[$section === 'pick' ? 'pick_news' : 'more_news'] as $item) if (!empty($item['url'])) $links[] = $item['url'];
+    if ($section === 'category') foreach ($n['categories'] as $category) {
+        if (!trim($category['category_name'])) continue;
+        $links[] = $category['category_name'] . ':';
+        foreach ($category['items'] as $item) if (!empty($item['url'])) $links[] = $item['url'];
+        $links[] = '';
+    }
+    ob_start(); ?>
+    <details class="section-import" data-import-section="<?= h($section) ?>">
+      <summary>Import / refresh <?= h($labels[$section]) ?> from article links</summary>
+      <p>Paste this section's links only. The rest of your draft is kept. You can start with any section and return later.</p>
+      <?php if ($section === 'category'): ?><p>Include category headings, for example <strong>TOURISM NEWS:</strong>, followed by its links. Only named category groups are replaced.</p><?php endif; ?>
+      <textarea data-import-links rows="5" placeholder="<?= $section === 'category' ? 'TOURISM NEWS:' . "
+" : '' ?>https://www.travelandtourworld.com/news/article/..."><?= h(implode("
+",$links)) ?></textarea>
+      <button type="button" class="button" data-import-start>Import <?= h($labels[$section]) ?> links</button>
+      <button type="button" class="button secondary" data-import-stop>Return to editing</button>
+      <div data-import-status role="status" aria-live="polite"></div>
+      <label data-import-warning hidden><input type="checkbox" data-import-accept> I reviewed the warnings and accept missing descriptions or placeholder images.</label>
+      <button type="button" class="button secondary" data-import-retry hidden>Retry articles with problems</button>
+      <button type="button" class="button" data-import-apply hidden>Save imported section</button>
+    </details>
+    <?php return (string)ob_get_clean();
+}

@@ -76,14 +76,10 @@ void main() {
         find.byType(TextField).at(2),
         'Manually entered subject',
       );
-      await tester.enterText(
-        find.byType(TextField).at(3),
-        'Manually entered description',
-      );
       await tester.tap(find.text('Generate Newsletter  →'));
       await tester.pumpAndSettle();
       expect(submission?['subject_title'], 'Manually entered subject');
-      expect(submission?['hidden_text'], 'Manually entered description');
+      expect(submission?['hidden_text'], '');
       expect(submission?['text'], contains('Pick News:'));
       expect(find.text('Automation #17'), findsOneWidget);
       expect(find.text('Review Newsletter Data'), findsOneWidget);

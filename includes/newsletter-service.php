@@ -47,9 +47,6 @@ function persist_newsletter(PDO $pdo, array $data, array $currentUser, bool $aut
     $promotionHeight = (int) ($data['promotion_height'] ?? 170);
 
     $subjectTitle = trim((string) ($data['subject_title'] ?? ''));
-    if ($subjectTitle === '') {
-        $subjectTitle = 'Draft Newsletter ' . date('d M Y', strtotime($date)) . ' ' . ($edition === 'M' ? 'Morning' : 'Evening');
-    }
 
     if ($id) {
         $stmt = $pdo->prepare('UPDATE newsletters SET newsletter_date=?, edition=?, subject_title=?, hidden_text=?, header_title=?, header_description=?, header_url=?, header_image=?, promotion_enabled=?, promotion_text=?, promotion_url=?, promotion_image=?, promotion_width=?, promotion_height=?, updated_by=? WHERE id=?');
@@ -109,4 +106,26 @@ function persist_newsletter(PDO $pdo, array $data, array $currentUser, bool $aut
     }
 
     return $id;
+}
+
+/** Convert the existing newsletter structure back into the shared save form. */
+function newsletter_form_data(array $newsletter): array
+{
+    $data = $newsletter;
+    foreach (['pick_title','pick_description','pick_url','pick_image_data','pick_existing_image','more_title','more_url','category_key','category_name','category_url','category_news_title','category_news_url'] as $key) $data[$key] = [];
+    foreach ($newsletter['pick_news'] ?? [] as $item) {
+        $data['pick_title'][] = $item['title']; $data['pick_description'][] = $item['description'];
+        $data['pick_url'][] = $item['url']; $data['pick_existing_image'][] = $item['image'];
+    }
+    foreach ($newsletter['more_news'] ?? [] as $item) {
+        $data['more_title'][] = $item['title']; $data['more_url'][] = $item['url'];
+    }
+    foreach ($newsletter['categories'] ?? [] as $i => $category) {
+        $key = 'saved_' . $i; $data['category_key'][] = $key;
+        $data['category_name'][] = $category['category_name']; $data['category_url'][] = $category['category_url'];
+        foreach ($category['items'] as $item) {
+            $data['category_news_title'][$key][] = $item['title']; $data['category_news_url'][$key][] = $item['url'];
+        }
+    }
+    return $data;
 }

@@ -1,5 +1,7 @@
 # Next steps
 
+For the title/body-snippet and section-by-section update, follow **docs/UPDATE_0.2.0.md**. Upload the v0.2.0 web ZIP into the existing `/New/` directory first, then update Android. If the automation schema is already ready, this version needs no additional SQL.
+
 1. Back up the existing hosted PHP app and newsletter database.
 2. Download this repository. Upload root PHP/assets plus api/, automation/, includes/ and migrations/ beneath public_html/New/ for the current subfolder deployment. Preserve existing uploads and server-only credentials. Do not upload mobile/, tests/, source archives or caches into the public web directory.
 3. On the server, copy config.local.php.example to config.local.php and enter the existing database host/name/user/password. Configure a long random TTW_API_SECRET. Never upload the example placeholders as real credentials.
@@ -21,7 +23,7 @@ If Automation shows a configuration error, upload the latest `api/index.php` and
 
 For the report listing all five automation tables and both approval columns as missing, import `migrations/002_complete_automation_setup.sql` into the existing newsletter database through phpMyAdmin after taking an export backup. The completion script preserves existing issues/users and handles existing date/edition unique indexes. Review any migration_warning result before proceeding; duplicate issues are reported and retained. Reload the setup check, then the Automation page.
 
-- Android APK: repository Releases / v0.1.1.
+- Android APK and matching web update ZIP: repository Releases / v0.2.0.
 - Setup: README.md, DEPLOYMENT.md and MOBILE_SETUP.md.
 - Database: DATABASE_MIGRATION.md.
 - API: API_DOCUMENTATION.md.

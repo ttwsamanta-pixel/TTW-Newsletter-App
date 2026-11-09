@@ -49,3 +49,7 @@ flutter build ios --release --dart-define=API_URL=https://your-production-host/a
 Archive/distribute using your Apple account and standard Xcode process. iOS builds cannot be produced or signed on this Windows host. Test secure token persistence, logout, WebView, permissions and uploads on Android and iOS before distributing.
 
 Flutter project/tooling references: [create an app](https://docs.flutter.dev/reference/create-new-app), [platform setup](https://docs.flutter.dev/install). Runtime networking follows PHP's [cURL options](https://www.php.net/manual/en/function.curl-setopt.php/) with manual redirect validation.
+
+## Version 0.2.0
+
+Update the matching PHP backend first, then install the 0.2.0 APK (build 3). All-links creation remains available. The new Section by Section workspace has Basic, Header, Pick News, More News, Categories and Promotion tabs and can resume an existing draft from Preview. More/Categories can arrive before Header/Pick. Email Title is optional while drafting; Hidden Preview Text is filled from Header body. Existing account/token storage remains the same. See docs/UPDATE_0.2.0.md.

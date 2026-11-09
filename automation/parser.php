@@ -27,7 +27,7 @@ function category_map(array $masters): array {
     }
     return $map;
 }
-function parse_newsletter_input(string $text, array $masters): array {
+function parse_newsletter_input(string $text, array $masters, bool $requireHeader = true): array {
     if (strlen($text) > 65536) throw new InvalidArgumentException('Input exceeds 64 KB.');
     $map = category_map($masters);
     $text = preg_replace('/^([^\r\n:：]{1,190})\s*[:：]\s*(?=https?:\/\/)/miu', "$1:\n", $text);
@@ -53,7 +53,7 @@ function parse_newsletter_input(string $text, array $masters): array {
         switch ($label) {
             case 'header': case 'header story': $section='header'; break;
             case 'pick news': $section='pick'; break;
-            case 'more news': case 'more travel news': $section='more'; break;
+            case 'more news': case 'more travel news': case 'mtn': case 'mtn / more news': $section='more'; break;
             case 'categories': $section='category'; break;
             default:
                 $section='category'; $category=$map[$label] ?? null;
@@ -61,7 +61,34 @@ function parse_newsletter_input(string $text, array $masters): array {
         }
     }
     $headers = count(array_filter($articles, fn($a)=>$a['section']==='header'));
-    if ($headers !== 1) $errors[] = 'Exactly one header article is required.';
+    if (($requireHeader && $headers !== 1) || $headers > 1) $errors[] = 'Exactly one header article is required.';
     if (count($articles) > 50) $errors[] = 'Maximum 50 articles per job.';
     return ['articles'=>$articles,'total'=>count($articles),'warnings'=>$warnings,'errors'=>$errors,'status'=>$errors ? 'warning' : 'ready'];
+}
+
+function parse_automation_input(array $input, array $masters): array {
+    $mode = $input['input_mode'] ?? 'all';
+    $text = (string)($input['text'] ?? '');
+    if ($mode === 'all') return parse_newsletter_input($text, $masters);
+    if ($mode !== 'section') throw new InvalidArgumentException('Choose all links or a section import.');
+    $section = (string)($input['section'] ?? '');
+    $headings = ['header'=>'header', 'pick'=>'Pick News', 'more'=>'More News', 'category'=>'Categories'];
+    if (!isset($headings[$section])) throw new InvalidArgumentException('Choose Header, Pick News, More News or Categories.');
+    $prefix = $headings[$section] . ":\n";
+    $categoryId = (int)($input['category_id'] ?? 0);
+    if ($section === 'category' && $categoryId) {
+        $matches = array_values(array_filter($masters, fn($m)=>(int)$m['id']===$categoryId && (int)$m['active']===1));
+        if (!$matches) throw new InvalidArgumentException('Choose an active category.');
+        $prefix .= $matches[0]['category_name'] . ":\n";
+    }
+    $parsed = parse_newsletter_input($prefix . $text, $masters, $section === 'header');
+    foreach ($parsed['articles'] as $article) {
+        if ($article['section'] !== $section || ($section === 'category' && $categoryId && $article['category_id'] !== $categoryId)) {
+            $parsed['errors'][] = 'Paste only links for the selected section/category.';
+            break;
+        }
+    }
+    if (!$parsed['total']) $parsed['errors'][] = 'Add at least one article URL.';
+    $parsed['status'] = $parsed['errors'] ? 'warning' : 'ready';
+    return $parsed;
 }

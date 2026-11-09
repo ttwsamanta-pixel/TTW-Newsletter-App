@@ -87,6 +87,11 @@ try {
         else db()->prepare('INSERT INTO newsletter_categories_master(category_name,category_slug,aliases,active,display_order) VALUES(?,?,?,?,?)')->execute([$name,$slug,$aliases,$active,$order]);
         api_reply(['ok'=>true]);
     }
+    if ($route==='/newsletters/draft' && $method==='POST') {
+        api_permission(empty($input['id']) ? 'create' : 'edit',$user);
+        $id=save_newsletter_draft($input,$user);
+        api_reply(['id'=>$id,'newsletter'=>load_newsletter($id)]);
+    }
     if ($route==='/newsletters' && $method==='GET') {
         api_permission('view',$user); $page=max(1,(int)($_GET['page'] ?? 1)); $offset=($page-1)*30;
         $rows=db()->query('SELECT id,newsletter_date,edition,subject_title,approved_at FROM newsletters ORDER BY newsletter_date DESC,edition DESC LIMIT 30 OFFSET '.$offset)->fetchAll();
@@ -102,33 +107,28 @@ try {
             echo render_newsletter($n); exit;
         }
         if ($action==='/approve' && $method==='POST') {
-            if (trim($n['header_title'])==='' || trim($n['subject_title'])==='') throw new InvalidArgumentException('A header and subject are required before approval.');
+            if (trim($n['header_title'])==='' || trim($n['subject_title'])==='') throw new InvalidArgumentException('Add Header news and a manually entered Email Title before approval.');
             db()->prepare('UPDATE newsletters SET approved_at=NOW(),approved_by=? WHERE id=?')->execute([$user['id'],$id]); api_reply(['ok'=>true]);
         }
         if ($action==='' && $method==='GET') api_reply(['newsletter'=>$n]);
         if ($action==='' && $method==='POST') {
             // Metadata edits preserve the existing article URLs, images and link collections.
-            $data=$n;
+            $data=newsletter_form_data($n);
             foreach(['subject_title','hidden_text','header_title','header_description'] as $key) {
                 if (isset($input[$key])) {
                     if (!is_string($input[$key]) || strlen($input[$key])>5000) throw new InvalidArgumentException('Invalid text field.');
                     $data[$key]=trim($input[$key]);
                 }
             }
-            if ($data['subject_title']==='' || strlen($data['subject_title'])>250 || $data['header_title']==='') throw new InvalidArgumentException('A subject and header title are required.');
+            if (strlen($data['subject_title'])>250) throw new InvalidArgumentException('Email Title must be at most 250 characters.');
             $edits=[];
             foreach(($input['pick_news'] ?? []) as $p) {
                 if (!is_array($p) || !is_string($p['title'] ?? null) || !is_string($p['description'] ?? null) || strlen($p['title'])>5000 || strlen($p['description'])>10000) throw new InvalidArgumentException('Invalid article edit.');
                 $edits[(int)($p['id'] ?? 0)]=$p;
             }
-            foreach($n['pick_news'] as $p) {
+            foreach($n['pick_news'] as $i=>$p) {
                 $edit=$edits[(int)$p['id']] ?? $p;
-                $data['pick_title'][]=$edit['title']; $data['pick_description'][]=$edit['description']; $data['pick_url'][]=$p['url']; $data['pick_existing_image'][]=$p['image'];
-            }
-            foreach($n['more_news'] as $p) { $data['more_title'][]=$p['title']; $data['more_url'][]=$p['url']; }
-            foreach($n['categories'] as $i=>$c) {
-                $key='cat_'.$i; $data['category_key'][]=$key; $data['category_name'][]=$c['category_name']; $data['category_url'][]=$c['category_url'];
-                foreach($c['items'] as $p) { $data['category_news_title'][$key][]=$p['title']; $data['category_news_url'][$key][]=$p['url']; }
+                $data['pick_title'][$i]=$edit['title']; $data['pick_description'][$i]=$edit['description'];
             }
             db()->beginTransaction();
             try { persist_newsletter(db(),$data,$user,false,true); db()->commit(); }
@@ -136,8 +136,8 @@ try {
             api_reply(['ok'=>true]);
         }
     }
-    if ($route==='/automation/parse' && $method==='POST') { api_permission('create',$user); api_reply(parse_newsletter_input((string)($input['text'] ?? ''),master_categories())); }
-    if ($route==='/automation/jobs' && $method==='POST') { api_permission('create',$user); api_rate('jobs:'.$user['id'],5); api_reply(['id'=>create_job($input,$user)],202); }
+    if ($route==='/automation/parse' && $method==='POST') { api_permission('create',$user); api_reply(parse_automation_input($input,master_categories())); }
+    if ($route==='/automation/jobs' && $method==='POST') { api_permission('create',$user); if(!empty($input['target_id'])) api_permission('edit',$user); api_rate('jobs:'.$user['id'],5); api_reply(['id'=>create_job($input,$user)],202); }
     if ($route==='/automation/jobs' && $method==='GET') {
         api_permission('create',$user); $stmt=db()->prepare('SELECT id,status,total,completed,newsletter_id,created_at FROM automation_jobs WHERE user_id=? ORDER BY id DESC LIMIT 20'); $stmt->execute([$user['id']]); api_reply(['jobs'=>$stmt->fetchAll()]);
     }

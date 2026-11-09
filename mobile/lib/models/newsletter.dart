@@ -31,12 +31,14 @@ class ParsedArticle {
 }
 
 class AutomationJob {
+  final Map<String, dynamic> payload;
   final int id, total, completed;
   final int? newsletterId;
   final String status;
   final List<Map<String, dynamic>> articles;
   AutomationJob.fromJson(Map<String, dynamic> j)
-    : id = int.parse('${j['id']}'),
+    : payload = (j['payload'] as Map<String, dynamic>?) ?? {},
+      id = int.parse('${j['id']}'),
       total = int.parse('${j['total']}'),
       completed = int.parse('${j['completed']}'),
       newsletterId = j['newsletter_id'] == null
@@ -47,4 +49,5 @@ class AutomationJob {
   bool get finished =>
       ['completed', 'completed_with_warnings', 'failed'].contains(status);
   double get progress => total == 0 ? 0 : completed / total;
+  bool get isSectionImport => payload['input_mode'] == 'section';
 }

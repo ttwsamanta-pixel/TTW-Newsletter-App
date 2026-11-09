@@ -29,4 +29,6 @@
 - `README.md`, `ARCHITECTURE.md`, `API_DOCUMENTATION.md`, `DATABASE_MIGRATION.md`, `DEPLOYMENT.md`, `MOBILE_SETUP.md`, `docs/VALIDATION.md`.
 - `docs/web-dashboard.png`, `web-mobile.png`, `web-preview.png`: browser acceptance screenshots.
 
-`newsletter_renderer.php`, original assets/app.js/app.css, invoice application, uploaded backups and historical sample HTML were not changed.
+`newsletter_renderer.php` remains the shared renderer; v0.2.0 only skips the Header block when a partial draft has no Header yet. Original assets/app.js/app.css, invoice application, uploaded backups and historical sample HTML were not changed.
+
+Version 0.2.0 adds automation/drafts.php, assets/section-import.js, mobile/lib/features/create_newsletter/sections.dart and scoped-import tests. See UPDATE_0.2.0.md for deployment and the exact text rules.

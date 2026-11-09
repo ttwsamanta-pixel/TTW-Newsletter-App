@@ -36,7 +36,7 @@ $payload=['newsletter_date'=>$date,'edition'=>'M','subject_title'=>'Integration 
 // Deterministic extraction/image fixtures populate persisted article results.
 // This tests queue-to-draft mapping without changing network or SSRF protections.
 foreach($job['articles'] as $a){
-    $result=extract_article('<meta property="og:title" content="Original '.$a['section'].' title"><meta property="og:description" content="Original excerpt">',$a['url']);
+    $result=extract_article('<article><h1>Original '.$a['section'].' title</h1><p>Original article content is used directly for descriptions and hidden preview text without taking any metadata excerpt from this page.</p></article>',$a['url']);
     if(in_array($a['section'],['header','pick'],true)){$size=$a['section']==='header'?[610,380]:[350,291];$result['image']=missing_image($date,...$size);}
     $result['warnings']=$a['section']==='header'?['Featured image could not be retrieved']:[];
     db()->prepare('UPDATE automation_articles SET status=?,result=?,error_message=?,started_at=NOW(),completed_at=NOW() WHERE id=?')->execute([$a['section']==='header'?'warning':'completed',json_encode($result),$a['section']==='header'?'Featured image could not be retrieved':null,$a['id']]);

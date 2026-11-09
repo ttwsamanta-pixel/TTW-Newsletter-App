@@ -6,6 +6,7 @@ import '../../core/auth.dart';
 import '../../models/newsletter.dart';
 import '../../widgets/ui.dart';
 import '../automation/job.dart';
+import 'sections.dart';
 
 const inputTemplate =
     'header:\n\nPick News:\n\nMore News:\n\nCategories:\nTOURISM NEWS:\n\nMEETING AND EVENT INDUSTRY NEWS:\n';
@@ -293,13 +294,20 @@ class _CreateState extends State<CreateScreen> {
       const SizedBox(height: 18),
       TextField(
         controller: subject,
-        decoration: field('Email Subject *', icon: Icons.mail_outline),
+        decoration: field(
+          'Email Title (optional — add later)',
+          icon: Icons.mail_outline,
+        ),
         maxLength: 250,
       ),
       const SizedBox(height: 18),
       TextField(
         controller: description,
-        decoration: field('Email Description *'),
+        readOnly: true,
+        decoration: field(
+          'Hidden Preview Text',
+          hint: 'Automatically taken from the first 16 words of Header content, followed by ...',
+        ),
         maxLines: 5,
         maxLength: 5000,
       ),
@@ -313,9 +321,6 @@ class _CreateState extends State<CreateScreen> {
       await parse(structured());
       if (mounted) setState(() => step = 2);
     } else {
-      if (subject.text.trim().isEmpty || description.text.trim().isEmpty) {
-        throw Exception('Enter an email subject and description.');
-      }
       final r = await widget.auth.api.request(
         '/automation/jobs',
         data: {
@@ -395,6 +400,16 @@ class _CreateState extends State<CreateScreen> {
               children: [
                 if (error != null) Notice(error!),
                 if (step == 0) ...[
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => SectionDraftScreen(auth: widget.auth),
+                      ),
+                    ),
+                    icon: const Icon(Icons.view_list_outlined),
+                    label: const Text('Section by section · six steps'),
+                  ),
                   const SizedBox(height: 12),
                   ListTile(
                     contentPadding: EdgeInsets.zero,

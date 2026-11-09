@@ -3,6 +3,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../core/auth.dart';
 import '../../widgets/ui.dart';
+import '../create_newsletter/sections.dart';
 
 class PreviewScreen extends StatefulWidget {
   final Auth auth;
@@ -125,7 +126,7 @@ class _PreviewState extends State<PreviewScreen> {
                         decoration: field(
                           {
                             'subject_title': 'Email Subject',
-                            'hidden_text': 'Email Description',
+                            'hidden_text': 'Hidden Preview Text',
                             'header_title': 'Header Title',
                             'header_description': 'Header Description',
                           }[e.key]!,
@@ -231,6 +232,25 @@ class _PreviewState extends State<PreviewScreen> {
               ),
             ),
           ),
+          if (widget.auth.can('edit'))
+            TextButton.icon(
+              onPressed: busy
+                  ? null
+                  : () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => SectionDraftScreen(
+                            auth: widget.auth,
+                            id: widget.id,
+                          ),
+                        ),
+                      );
+                      if (mounted) await load();
+                    },
+              icon: const Icon(Icons.view_list_outlined),
+              label: const Text('Continue section by section'),
+            ),
           if (widget.auth.can('edit'))
             Padding(
               padding: const EdgeInsets.all(18),

@@ -1,5 +1,13 @@
 # Validation record
 
+## Section workflow and source-text update — 9 November 2026 (0.2.0)
+
+Implemented original visible-heading extraction, trailing TTW SEO suffix cleanup, Header body prefix 35 words, Pick/Hidden Preview body prefix 16 words, optional manual Email Title during drafting, and both all-links and six-step section imports. Scoped generation preserves unrelated latest draft data and named category groups. Partial previews skip an absent Header; complete newsletter layout remains shared.
+
+Passed 38 PHP unit checks, 24 new section API/service workflow checks, 32 existing API/editor checks, 11 Flutter tests and clean Flutter analysis. Browser tests passed with real TTW pages/images and cron, including More → Categories → Header → Pick, adding Email Title last, returning to editing without applying queued results, and responsive layout. Existing all-links browser flow and worker CLI checks also passed. Android v0.2.0 / code 3 built successfully. Physical testing of this new release awaits deployment of the matching backend; do not confuse prior 0.1.1 login verification with 0.2.0 section-workspace hardware acceptance.
+
+The web update ZIP excludes server credentials, config.local.php, uploads, storage, databases and SQL. No new schema migration is required when the existing automation setup is ready. Tests used isolated local databases; live production issues were not modified. See [upgrade guide](UPDATE_0.2.0.md), [web workflow screenshot](web-section-workflow.png) and [mobile web screenshot](web-section-mobile.png).
+
 ## Android API-path correction — 9 November 2026
 
 Version 0.1.1 / build 2 uses `https://newsletter.travelandtourworld.com/New/api/index.php`. The previous 0.1.0 APK used the root API location. Live checks found HTML 404 at the root and the expected JSON 401 at `/New/`. A POST with a deliberately invalid test account reached the `/New/` login handler and returned JSON `Invalid username or password.` No real account credentials were tested.

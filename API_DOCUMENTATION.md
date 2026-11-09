@@ -20,6 +20,7 @@ Limits: 10 login attempts/IP/minute, 120 authenticated requests/user/minute, fiv
 | GET | /newsletters | view; page query, 30 rows/page; includes today's editions and server_date |
 | GET | /newsletters/{id} | view; original newsletter and collections |
 | POST | /newsletters/{id} | edit; update subject_title, hidden_text, header_title, header_description and optional pick_news [{id,title,description}]; preserves URLs/images/link sections; clears approval |
+| POST | /newsletters/draft | create for new/edit for existing id; save Basic or Promotion details while Header/title may still be absent; preserves other sections; returns id and newsletter; date+edition conflicts return existing_id |
 | GET | /newsletters/{id}/preview | view; authenticated HTML from original renderer, no script execution allowed by CSP |
 | POST | /newsletters/{id}/approve | edit; explicit approval; no sending |
 | POST | /automation/parse | create; {text}; deterministic parsing, errors/warnings |
@@ -34,7 +35,7 @@ For page 2 use `api/index.php?route=/newsletters&page=2`.
 
 ## Parse
 
-Input headings: header, Pick News, More News, Categories, and dynamic category names/aliases. Names are case-insensitive with collapsed whitespace. Colons, full-width colons, heading markers and blank lines are tolerated. Multiple URLs on a line work. URLs are normalized to HTTPS www host, trailing slash, without tracking query/fragment before duplicate checking. Duplicates create warnings; invalid links, unknown categories, multiple/missing headers or more than 50 URLs create errors. New category names must be added by an admin; matching is never guessed.
+Input headings: header, Pick News, More News (also MTN), Categories, and dynamic category names/aliases. Names are case-insensitive with collapsed whitespace. Colons, full-width colons, heading markers and blank lines are tolerated. Multiple URLs on a line work. URLs are normalized to HTTPS www host, trailing slash, without tracking query/fragment before duplicate checking. All-links mode requires one Header; section mode validates only its selected section. Duplicates create warnings; invalid links, unknown categories, multiple headers or more than 50 URLs create errors. New category names must be added by an admin; matching is never guessed.
 
 Response: `{articles:[{section,category_id,category_name,url}],total,warnings,errors,status}`. Parse validates structure only. Metadata/status is returned by the asynchronous job after article processing. Clients may remove/reorder/replace links, rebuild the structured input, and reparse before submission.
 
@@ -46,13 +47,20 @@ Response: `{articles:[{section,category_id,category_name,url}],total,warnings,er
   "edition": "M",
   "text": "header:\nhttps://www.travelandtourworld.com/news/article/example/",
   "subject_title": "Manually entered subject",
-  "hidden_text": "Manually entered email description",
   "promotion_url": "https://www.travelandtourworld.com/ttwapp/",
   "promotion_text": "Optional banner title"
 }
 ```
 
 If uploading a promotion, also pass `promotion_image` = returned path and `promotion_signature` = returned signature. Signatures bind upload paths to users. No banner means no manual promotion; the renderer's existing standard footer/banner remains.
+
+### Section imports (0.2.0)
+
+Both parse and job submission accept `input_mode: "section"`, `section: "header" | "pick" | "more" | "category"`, and raw links in `text`. Category input can include category headings or provide a single `category_id`. Other section headings are rejected. Supply `target_id` to import into an existing unapproved issue; it must match newsletter_date/edition and requires edit permission. Partial drafts may start with More News/Categories and no Header. Section jobs use the same asynchronous worker.
+
+Generate applies only the selected section, loading the latest issue state under a transaction lock. Pick/More replace their own lists; categories replace only named category groups and retain other groups. Existing images, promotion and manually entered Email Title are kept unless explicitly changed. Header import also sets Hidden Preview Text. Generate remains idempotent per job; refetching requires a new import. A section job without target_id can create a partial draft; a conflicting existing issue requires explicit consent to merge that section, never silently replaces the complete issue.
+
+`subject_title` is optional during drafting/generation and stays blank if not provided. Header Description comes from the first 35 words of article body; Pick Description and Hidden Preview Text use the first 16, followed by `...`. `hidden_text` supplied by legacy job callers is ignored in favor of Header content. Extraction prefers visible article H1 and removes a trailing TTW site suffix; metadata excerpts are not used. Approval requires Header news and a manually entered Email Title. Existing saved issues are refreshed only by explicit user action.
 
 Poll at 2–3 second intervals. Statuses: pending, processing, completed, completed_with_warnings, failed. A processing job may briefly return pending between individual article operations. Response includes `{id,status,progress,total,completed,newsletter_id,articles,payload}`. Each article includes section/category, URL, status, original metadata, local image path when needed, warning/error, attempts and timestamps. More News/categories are link-only because that is the existing renderer/data format.
 

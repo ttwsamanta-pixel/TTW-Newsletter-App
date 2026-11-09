@@ -46,7 +46,25 @@ function safe_fetch(string $url, bool $image = false): string {
     throw new RuntimeException('Too many redirects.');
 }
 
-function extract_article(string $html, string $url): array {
+function clean_article_text(string $text): string {
+    $text = str_replace(["\u{200B}", "\u{FEFF}", "\u{00AD}"], '', $text);
+    return trim(preg_replace('/\s+/u', ' ', $text));
+}
+function clean_article_title(string $title): string {
+    $title = clean_article_text($title);
+    do {
+        $previous = $title;
+        $title = trim(preg_replace('/\s*[-–—|]\s*Travel\s+(?:And|&)\s+Tour\s+World\s*$/iu', '', $title));
+    } while ($previous !== $title);
+    return $title;
+}
+function article_snippet(string $content, int $words): string {
+    $content = clean_article_text($content);
+    if ($content === '') return '';
+    $parts = preg_split('/\s+/u', $content, -1, PREG_SPLIT_NO_EMPTY);
+    return rtrim(implode(' ', array_slice($parts, 0, $words)), " \t\n\r.,;:!?…") . '...';
+}
+function extract_article(string $html, string $url, string $section = 'header'): array {
     $doc=new DOMDocument();
     $previous=libxml_use_internal_errors(true);
     $doc->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
@@ -56,14 +74,45 @@ function extract_article(string $html, string $url): array {
         $node=$xp->query('//meta[@property="'.$key.'" or @name="'.$key.'"]/@content')->item(0);
         return trim($node ? $node->nodeValue : '');
     };
-    $title=$meta('og:title') ?: trim($xp->evaluate('string((//article//h1 | //h1)[1])'));
-    if ($title==='') $title=trim($xp->evaluate('string(//title)'));
-    $description=$meta('og:description') ?: $meta('description');
-    if ($description==='') $description=trim($xp->evaluate('string((//article//p)[1])'));
+    $title = trim($xp->evaluate('string((//article//h1)[1])'));
+    if ($title === '') $title = trim($xp->evaluate('string((//*[@itemprop="headline"])[1])'));
+    $body = null;
+    foreach ([
+        '//*[contains(concat(" ",normalize-space(@class)," ")," single-news-content ")]',
+        '//*[contains(concat(" ",normalize-space(@class)," ")," entry-content ")]',
+        '//*[@itemprop="articleBody"]',
+        '//article[.//h1]',
+    ] as $selector) {
+        $candidate = $xp->query('(' . $selector . ')[1]')->item(0);
+        if ($candidate instanceof DOMElement) { $body = $candidate; break; }
+    }
+    $content = '';
+    if ($body) {
+        if ($title === '') $title = trim($xp->evaluate('string((//main//h1 | //h1)[1])'));
+        if ($title === '') $title = $meta('og:title') ?: trim($xp->evaluate('string(//title)'));
+        $copy = $body->cloneNode(true);
+        $cleanDoc = new DOMDocument(); $cleanDoc->appendChild($cleanDoc->importNode($copy, true));
+        $clean = new DOMXPath($cleanDoc);
+        $remove = [];
+        foreach ($clean->query('//script|//style|//nav|//aside|//form|//button|//figure|//figcaption|//iframe|//svg|//ins|//*[contains(@class,"advert") or contains(@class,"adsbygoogle") or contains(@class,"ad-container") or contains(@class,"related-post") or contains(@class,"share-buttons")]') as $node) $remove[] = $node;
+        foreach ($remove as $node) if ($node->parentNode) $node->parentNode->removeChild($node);
+        $paragraphs = [];
+        foreach ($clean->query('//p') as $paragraph) {
+            $text = clean_article_text($paragraph->textContent);
+            if ($text !== '' && !preg_match('/^(?:Advertisement|Also read\s*:|Read more\s*:|Image (?:credit|courtesy|generated)|Written by\s*:)/iu', $text)) $paragraphs[] = $text;
+        }
+        $content = clean_article_text(implode(' ', $paragraphs));
+        // Bound the stored source text; snippets only need its opening words.
+        $content = mb_substr($content, 0, 30000);
+    }
+    // A news-list redirect is not an article. Do not import its generic heading/cards.
+    if (!$body) $title = '';
+    $title = clean_article_title($title);
+    $description = article_snippet($content, $section === 'header' ? 35 : 16);
     $image=$meta('og:image') ?: $meta('twitter:image');
     $canonical=trim($xp->evaluate('string(//link[@rel="canonical"]/@href)'));
     try { $canonical=$canonical ? article_url(resolve_remote_url($url,$canonical)) : $url; } catch (Throwable $e) { $canonical=$url; }
-    return ['title'=>$title,'description'=>$description,'featured_image'=>$image ? resolve_remote_url($url,$image) : '', 'canonical_url'=>$canonical];
+    return ['title'=>$title,'description'=>$description,'hidden_text'=>article_snippet($content,16),'content'=>$content,'featured_image'=>$image ? resolve_remote_url($url,$image) : '', 'canonical_url'=>$canonical];
 }
 
 function process_image(string $bytes, string $date, int $width, int $height): string {
