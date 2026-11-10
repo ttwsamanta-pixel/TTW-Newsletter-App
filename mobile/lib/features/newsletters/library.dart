@@ -9,7 +9,12 @@ class LibraryScreen extends StatefulWidget {
   final Auth auth;
   final bool history;
   final String initialStatus;
-  const LibraryScreen({super.key, required this.auth, this.history = false,this.initialStatus=''});
+  const LibraryScreen({
+    super.key,
+    required this.auth,
+    this.history = false,
+    this.initialStatus = '',
+  });
   @override
   State<LibraryScreen> createState() => _LibraryState();
 }
