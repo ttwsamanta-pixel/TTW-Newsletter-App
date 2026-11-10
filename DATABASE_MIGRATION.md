@@ -1,5 +1,7 @@
 # Database migration
 
+For FileZilla-only access, upload app/upgrade-full-manager.php into /New/ and follow app/TEMPORARY_UPGRADE_README.md. This temporary page uses existing website admin authentication and database configuration, downloads a private tables backup, and applies only missing migration-003 additions. Remove the page after success. Database CREATE/ALTER privileges are still required; no PHP page can bypass them. This is an alternative to importing 003, not an additional migration.
+
 ## Full manager 0.3.0
 
 For the full manager 0.3.0, back up the live database and import migrations/003_full_manager.sql before deploying the new API. It adds newsletter_publications, newsletter_notification_reads, newsletter_password_resets and a nullable users.email field if absent. Existing users, newsletters and image paths are preserved. It is safe to rerun. Older initial migration instructions below apply to earlier installations.
