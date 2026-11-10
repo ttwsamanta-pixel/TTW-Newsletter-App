@@ -2,8 +2,8 @@
 
 ## Full manager 0.3.0 - 10 November 2026
 
-- 18 Flutter tests passed; Flutter analysis clean. Covers existing import flow, More-before-Header drafting, real dashboard values, library filters, publish confirmation, employee permissions, notification acknowledgements and scoped article removal.
-- 183 PHP checks passed: 38 extraction/parser, 12 shared uploads, 13 temporary images, 25 image fallback, 23 independent receiver, 55 manager/API integration, 6 reset-token, 3 worker/heartbeat/lock, 3 publish-failure and 5 sanitized diagnostic checks. Migration 003 was applied twice to an isolated fixture database.
+- 19 Flutter tests passed; Flutter analysis clean. Covers existing import flow, More-before-Header drafting, real dashboard values, library filters, publish confirmation, employee permissions, notification acknowledgements and scoped article removal.
+- 185 PHP checks passed: 38 extraction/parser, 12 shared uploads, 13 temporary images, 25 image fallback, 23 independent receiver, 55 manager/API integration, 6 reset-token, 3 worker/heartbeat/lock, 3 publish-failure, 2 promotion-month and 5 sanitized diagnostic checks. Migration 003 was applied twice to an isolated fixture database.
 - Browser acceptance passed for PHP web login/preview, explicit approval, Publish HTML to a separate local receiver, returned URL, original download and CSRF rejection. Flutter rendered at 390px using authenticated fixture data; login/dashboard/library/reports/settings were inspected.
 - Android 0.3.0 / code 6 built successfully with a TTW vector launcher icon derived from the existing logo. Flutter web preview also built. Source dependency versions were preserved. iOS source/configuration is included; no iOS binary was built on Windows.
 - Fixtures used loopback servers and isolated MySQL on port 33319. No production database, real account login, publishing secret or live publication was used. Phone acceptance against the upgraded backend, live main-domain deployment and reset-mail delivery remain deployment checks.

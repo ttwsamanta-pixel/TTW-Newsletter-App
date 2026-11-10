@@ -160,7 +160,9 @@ try {
         if (!$f || $f['error']!==UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name']) || $f['size']>8*1024*1024 || !in_array(strtolower(pathinfo($f['name'],PATHINFO_EXTENSION)),['jpg','jpeg','png','webp'],true)) throw new InvalidArgumentException('Choose a JPEG, PNG or WebP banner under 8 MB.');
         $bytes=file_get_contents($f['tmp_name']); $info=@getimagesizefromstring($bytes);
         if (!$info) throw new InvalidArgumentException('Invalid banner image.');
-        $path=process_image($bytes,date('Y-m-d'),$info[0],$info[1]);
+        $issueDate=(string)($_POST['newsletter_date'] ?? date('Y-m-d'));
+        if (!valid_issue_date($issueDate)) throw new InvalidArgumentException('Choose a valid newsletter date for the promotion.');
+        $path=process_image($bytes,$issueDate,$info[0],$info[1]);
         api_reply(['path'=>$path,'url'=>public_upload_url($path,'promotion'),'signature'=>promotion_signature($path,(int)$user['id'])]);
     }
     api_reply(['error'=>'Endpoint or method not found.'],404);

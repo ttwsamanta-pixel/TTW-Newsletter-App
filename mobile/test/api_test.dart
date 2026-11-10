@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -7,6 +8,37 @@ import 'package:ttw_newsletter/core/api.dart';
 import 'package:ttw_newsletter/models/newsletter.dart';
 
 void main() {
+  test(
+    'Promotion upload includes the selected newsletter issue date',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'ttw-promotion-test-',
+      );
+      final file = File('${directory.path}/banner.jpg');
+      await file.writeAsString('fixture image');
+      try {
+        final api = Api(
+          client: MockClient((r) async {
+            expect(r.url.queryParameters['route'], '/uploads/promotion');
+            expect(r.body, contains('name="newsletter_date"'));
+            expect(r.body, contains('2099-03-12'));
+            return http.Response(
+              '{"path":"uploads/temporary/2099/Mar/auto_fixture.jpg"}',
+              200,
+            );
+          }),
+        );
+        final result = await api.upload(
+          file.path,
+          newsletterDate: '2099-03-12',
+        );
+        expect(result['path'], contains('/2099/Mar/'));
+      } finally {
+        await file.delete();
+        await directory.delete();
+      }
+    },
+  );
   test('Default mobile API targets the deployed New folder', () {
     final api = Api();
     expect(api.uri('/auth/login').path, '/New/api/index.php');

@@ -32,3 +32,5 @@ Newsletter filters accept edition M/E and status draft/approved/published. Rejec
 Manual section mutations accept basic (subject_title/hidden_text), header (header_title/header_description), pick/more (ordered items with existing id/title/description) or category (category_id plus ordered existing items). Unknown/foreign/repeated article IDs are rejected. Unmentioned sections remain intact. New URLs continue through the existing scoped article import API and SSRF validation.
 
 Publication success returns publication metadata containing public_url, status, file_name, html_sha256 and published_at. Different existing HTML returns HTTP 409 with code FILE_EXISTS; clients must not silently send replace=true. The backend verifies the receiver filename, canonical URL and SHA-256 before recording success. See HTML_PUBLISHING.md for the receiver's multipart contract and security.
+
+Promotion multipart uploads accept newsletter_date=YYYY-MM-DD so working banners follow the selected issue month. Older clients that omit it retain the existing current-date default. New mobile creation screens pass the selected date.

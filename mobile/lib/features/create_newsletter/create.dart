@@ -134,7 +134,10 @@ class _CreateState extends State<CreateScreen> {
         ))?.path;
       }
       if (path != null) {
-        final result = await widget.auth.api.upload(path);
+        final result = await widget.auth.api.upload(
+          path,
+          newsletterDate: issueDate,
+        );
         if (mounted) setState(() => banner = result);
       }
     });

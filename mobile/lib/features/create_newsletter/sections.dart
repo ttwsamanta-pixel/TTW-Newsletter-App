@@ -240,7 +240,7 @@ class _SectionDraftState extends State<SectionDraftScreen> {
         ))?.path;
       }
       if (path != null) {
-        final result = await api.upload(path);
+        final result = await api.upload(path, newsletterDate: issueDate);
         if (mounted) {
           setState(() {
             banner = result;

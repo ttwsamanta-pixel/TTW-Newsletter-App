@@ -96,10 +96,14 @@ class Api {
     String path, {
     String route = '/uploads/promotion',
     String fileKey = 'banner',
+    String? newsletterDate,
   }) async {
     try {
       final request = http.MultipartRequest('POST', uri(route));
       request.headers.addAll(headers);
+      if (newsletterDate != null) {
+        request.fields['newsletter_date'] = newsletterDate;
+      }
       request.files.add(await http.MultipartFile.fromPath(fileKey, path));
       final response = await client
           .send(request)
