@@ -50,12 +50,14 @@ function publish_probe_image(string $url): void {
         if (!$ips) throw new InvalidArgumentException('An image host cannot be resolved.');
         foreach ($ips as $ip) if (!filter_var($ip,FILTER_VALIDATE_IP,FILTER_FLAG_NO_PRIV_RANGE|FILTER_FLAG_NO_RES_RANGE)) throw new InvalidArgumentException('An image points to an unsafe address.');
         $location=''; $ch=curl_init($url);
-        curl_setopt_array($ch,[CURLOPT_NOBODY=>true,CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_PROXY=>'',CURLOPT_PROTOCOLS=>CURLPROTO_HTTPS,CURLOPT_RESOLVE=>[$host.':443:'.$ips[0]],CURLOPT_CONNECTTIMEOUT=>3,CURLOPT_TIMEOUT=>5,
+        curl_setopt_array($ch,[CURLOPT_NOBODY=>true,CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_PROXY=>'',CURLOPT_PROTOCOLS=>CURLPROTO_HTTPS,CURLOPT_RESOLVE=>[$host.':443:'.$ips[0]],CURLOPT_CONNECTTIMEOUT=>3,CURLOPT_TIMEOUT=>5,CURLOPT_USERAGENT=>'TTW-Newsletter/1.0',
             CURLOPT_HEADERFUNCTION=>static function($c,$line) use (&$location) { if (stripos($line,'Location:')===0) $location=trim(substr($line,9)); return strlen($line); }]);
         $ok=curl_exec($ch); $status=curl_getinfo($ch,CURLINFO_HTTP_CODE); $type=curl_getinfo($ch,CURLINFO_CONTENT_TYPE) ?: ''; curl_close($ch);
         if ($ok!==false && $status===200 && str_starts_with(strtolower($type),'image/')) return;
         if ($status>=300 && $status<400 && $location!=='') { $url=resolve_remote_url($url,$location); continue; }
-        throw new InvalidArgumentException('A newsletter image is not publicly accessible. Check image URLs and retry.');
+        // Only the public host/path is reported; omit query strings that could contain signed values.
+        $label=$host.($p['path'] ?? '/');
+        throw new InvalidArgumentException('Image check failed for '.$label.' ('.($status ? 'HTTP '.$status : 'connection or TLS error').'). Check public image access and retry.');
     }
     throw new InvalidArgumentException('A newsletter image redirects too many times.');
 }
@@ -78,7 +80,7 @@ function publish_newsletter(int $id,array $user,bool $replace=false): array {
         $ch=curl_init($config['url']);
         curl_setopt_array($ch,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>['filename'=>$name,'year'=>$year,'month'=>$month,'approved'=>'1','replace'=>$replace ? '1' : '0','html'=>new CURLFile($temp,'text/html',$name)],
             CURLOPT_HTTPHEADER=>['X-Newsletter-Token: '.$config['token'],'Accept: application/json'],CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_CONNECTTIMEOUT=>5,CURLOPT_TIMEOUT=>25,
-            CURLOPT_PROTOCOLS=>$test ? CURLPROTO_HTTP : CURLPROTO_HTTPS]);
+            CURLOPT_PROTOCOLS=>$test ? CURLPROTO_HTTP : CURLPROTO_HTTPS,CURLOPT_USERAGENT=>'TTW-Newsletter/1.0']);
         $body=''; curl_setopt($ch,CURLOPT_WRITEFUNCTION,static function($ch,$chunk) use (&$body) { if (strlen($body)+strlen($chunk)>16384) return 0; $body.=$chunk; return strlen($chunk); });
         $ok=curl_exec($ch); $code=curl_getinfo($ch,CURLINFO_HTTP_CODE); curl_close($ch);
         if ($code===409) throw new LogicException('FILE_EXISTS');
