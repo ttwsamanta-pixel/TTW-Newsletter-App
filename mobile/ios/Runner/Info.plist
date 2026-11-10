@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Select a promotional banner for your newsletter.</string>
+	<string>Select a profile photo or promotional banner for your newsletter.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Take a photo for your newsletter promotion.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
@@ -11,7 +11,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Ttw Newsletter</string>
+	<string>TTW Newsletter</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

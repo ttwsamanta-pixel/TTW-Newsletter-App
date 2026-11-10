@@ -7,6 +7,7 @@ import '../../core/auth.dart';
 import '../../models/newsletter.dart';
 import '../../widgets/ui.dart';
 import '../newsletter_preview/preview.dart';
+import '../create_newsletter/success.dart';
 
 class JobScreen extends StatefulWidget {
   final Auth auth;
@@ -81,7 +82,15 @@ class _JobState extends State<JobScreen> {
           Navigator.pop(context);
           return;
         }
-        await preview(int.parse('${r['newsletter_id']}'));
+        await Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => CreatedScreen(
+              auth: widget.auth,
+              id: int.parse('${r['newsletter_id']}'),
+            ),
+          ),
+        );
       }
     } on ApiException catch (e) {
       if (e.existingId != null && mounted) {

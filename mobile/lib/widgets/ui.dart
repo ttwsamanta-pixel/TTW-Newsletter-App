@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-const navy = Color(0xff202151);
+const navy = Color(0xff0f1f50);
+const blue = Color(0xff085ed7);
 const red = Color(0xffe81032);
-const page = Color(0xfff6f6fc);
+const page = Color(0xfff4f7ff);
 
 class Brand extends StatelessWidget {
   final double size;

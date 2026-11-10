@@ -1,5 +1,10 @@
 # TTW API
 
+## Full manager 0.3.0
+
+See API.md for full manager 0.3.0 additions: dashboard, filtered library, manual section editing, download/delete, reports, employees, notifications, profile/password, worker observation and publish-html. Existing query routes/token authentication remain compatible after migration 003. See HTML_PUBLISHING.md for the separate trusted HTTPS receiver.
+
+
 ## Working image paths (0.2.2)
 
 New processed article images and signed promotion uploads return uploads/temporary/YYYY/Mon/auto_<24 hex characters>.jpg. The month follows the newsletter issue date. Draft apply and promotion validation accept both this format and legacy uploads/YYYY/Mon/auto_...jpg. Signatures continue to cover the exact path and user ID. Final saved images remain outside temporary/. No endpoint or database migration is required.

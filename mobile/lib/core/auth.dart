@@ -14,6 +14,11 @@ class Auth extends ChangeNotifier {
   }
   bool can(String permission) =>
       (user?['permissions'] as List? ?? []).contains(permission);
+  void updateUser(Map<String, dynamic> value) {
+    user = value;
+    notifyListeners();
+  }
+
   Future<void> restore() async {
     try {
       api.token = await storage.read(key: 'ttw_token');
@@ -26,13 +31,21 @@ class Auth extends ChangeNotifier {
     }
   }
 
-  Future<void> login(String username, String password) async {
+  Future<void> login(
+    String username,
+    String password, {
+    bool remember = true,
+  }) async {
     final result = await api.request(
       '/auth/login',
       data: {'username': username.trim(), 'password': password},
     );
     final token = result['token'] as String;
-    await storage.write(key: 'ttw_token', value: token);
+    if (remember) {
+      await storage.write(key: 'ttw_token', value: token);
+    } else {
+      await storage.delete(key: 'ttw_token');
+    }
     api.token = token;
     user = result['user'] as Map<String, dynamic>;
     error = null;

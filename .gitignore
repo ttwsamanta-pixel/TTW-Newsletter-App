@@ -9,6 +9,7 @@
 /mobile/android/local.properties
 
 /config.local.php
+**/config.local.php
 /config(*).php
 /uploads/
 /invoice/

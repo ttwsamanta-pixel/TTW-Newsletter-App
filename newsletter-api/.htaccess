@@ -1,0 +1,4 @@
+Options -Indexes
+<FilesMatch "^(config|service).*\.php$">
+  Require all denied
+</FilesMatch>

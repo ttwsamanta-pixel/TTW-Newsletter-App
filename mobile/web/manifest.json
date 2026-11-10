@@ -1,0 +1,12 @@
+{
+  "name": "TTW Newsletter Manager",
+  "short_name": "TTW Newsletter",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f4f7ff",
+  "theme_color": "#085ed7",
+  "description": "TTW Newsletter Manager development preview",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": []
+}

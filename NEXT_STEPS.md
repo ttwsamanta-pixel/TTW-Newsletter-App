@@ -1,5 +1,10 @@
 # Next steps
 
+## Full manager 0.3.0
+
+Start with docs/UPDATE_0.3.0.md. Back up the live database; import TTW_Manager_Database_Update.sql; extract TTW_Newsletter_Web_Updated.zip inside /New, preserving configuration/uploads/storage; deploy and configure the separate main-domain receiver; then install Android 0.3.0. Keep the existing cron. Earlier release instructions below are historical.
+
+
 ## Latest web update: 0.2.3
 
 Upload the full v0.2.3 web ZIP inside /New, or use the changed-files ZIP for an existing v0.2.2 deployment. Preserve config.local.php and old uploads. PHP needs write access to the shared public_html/uploads folder. Final and temporary images for newly created newsletters use that root folder. No SQL or app reinstall. Follow docs/UPDATE_0.2.3.md; earlier release notes below are historical.

@@ -6,6 +6,10 @@ function automation_setup_check(PDO $pdo): array
 {
     $required = [
         'newsletters' => ['approved_at', 'approved_by'],
+        'users' => ['email'],
+        'newsletter_publications' => ['status','public_url','html_sha256','published_at'],
+        'newsletter_notification_reads' => ['user_id','event_key'],
+        'newsletter_password_resets' => ['token_hash','user_id','expires_at','used_at'],
         'newsletter_categories_master' => ['category_name', 'category_slug', 'aliases', 'active', 'display_order'],
         'api_tokens' => ['user_id', 'token_hash', 'password_fingerprint', 'expires_at', 'revoked_at'],
         'api_rate_limits' => ['bucket', 'window_start', 'hits'],
@@ -40,7 +44,7 @@ function automation_setup_check(PDO $pdo): array
         'missing_columns' => $missingColumns,
         'missing_php_extensions' => $missingExtensions,
         'instruction' => $missingTables || $missingColumns
-            ? 'The automation database upgrade is incomplete. Back up the database, review DATABASE_MIGRATION.md and apply the missing changes from migrations/001_automation.sql. Do not rerun changes that already exist.'
+            ? 'The database upgrade is incomplete. Back up the database, review DATABASE_MIGRATION.md and apply missing automation changes and migrations/003_full_manager.sql. Do not rerun changes that already exist.'
             : ($missingExtensions ? 'Enable the listed PHP extensions in the hosting panel.' : 'Required automation tables, columns and PHP extensions are present. This read-only check does not test worker availability, uploads or every database index.'),
     ];
 }

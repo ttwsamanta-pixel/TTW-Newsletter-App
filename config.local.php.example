@@ -13,3 +13,8 @@ define('TTW_API_SECRET', 'REPLACE_WITH_A_LONG_RANDOM_SECRET');
 // Old New-only files remain readable here (default for /New: ./uploads):
 // define('LEGACY_IMAGE_UPLOAD_ROOT', '/absolute/path/to/public_html/New/uploads');
 // define('LEGACY_APP_BASE_URL', 'https://newsletter.travelandtourworld.com');
+// Full manager publishing: use the same private token on BOTH servers.
+// define('TTW_PUBLISH_API_URL', 'https://www.travelandtourworld.com/newsletter-api/upload.php');
+// define('TTW_PUBLISH_TOKEN', 'YOUR_RANDOM_TOKEN_AT_LEAST_32_CHARACTERS');
+// Password reset email: hosting mail transport must be configured.
+// define('TTW_RESET_FROM', 'newsletter@travelandtourworld.com');

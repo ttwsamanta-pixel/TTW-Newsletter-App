@@ -1,7 +1,7 @@
 name: ttw_newsletter
-description: "A new Flutter project."
+description: "TTW Newsletter Manager for web-connected newsletter creation and publishing."
 publish_to: 'none'
-version: 0.2.2+5
+version: 0.3.0+6
 
 environment:
   sdk: ^3.13.4

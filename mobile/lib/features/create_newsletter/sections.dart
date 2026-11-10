@@ -7,6 +7,7 @@ import '../../core/auth.dart';
 import '../../widgets/ui.dart';
 import '../automation/job.dart';
 import '../newsletter_preview/preview.dart';
+import 'article_editor.dart';
 
 class SectionDraftScreen extends StatefulWidget {
   final Auth auth;
@@ -26,6 +27,7 @@ class _SectionDraftState extends State<SectionDraftScreen> {
   List<dynamic> categories = [];
   int? categoryId;
   final subject = TextEditingController(),
+      hidden = TextEditingController(),
       promotionUrl = TextEditingController(),
       promotionText = TextEditingController();
   final links = {
@@ -45,6 +47,7 @@ class _SectionDraftState extends State<SectionDraftScreen> {
   @override
   void dispose() {
     subject.dispose();
+    hidden.dispose();
     promotionUrl.dispose();
     promotionText.dispose();
     for (final c in links.values) {
@@ -92,6 +95,7 @@ class _SectionDraftState extends State<SectionDraftScreen> {
       date = DateTime.parse(n['newsletter_date']);
       edition = n['edition'];
       subject.text = n['subject_title'] ?? '';
+      hidden.text = n['hidden_text'] ?? '';
       promotionUrl.text = n['promotion_url'] ?? '';
       promotionText.text = n['promotion_text'] ?? '';
     });
@@ -119,6 +123,7 @@ class _SectionDraftState extends State<SectionDraftScreen> {
           'newsletter_date': issueDate,
           'edition': edition,
           'subject_title': subject.text,
+          'hidden_text': hidden.text,
           'promotion_url': promotionUrl.text,
           'promotion_text': promotionText.text,
           if (promotionChanged) ...{
@@ -291,13 +296,10 @@ class _SectionDraftState extends State<SectionDraftScreen> {
         maxLength: 250,
       ),
       const SizedBox(height: 12),
-      InputDecorator(
+      TextField(
+        controller: hidden,
+        maxLines: 4,
         decoration: field('Hidden Preview Text'),
-        child: Text(
-          (newsletter?['hidden_text'] as String? ?? '').isEmpty
-              ? 'Automatically filled from the first 16 words of Header content, followed by ...'
-              : newsletter!['hidden_text'],
-        ),
       ),
       const SizedBox(height: 22),
       PrimaryButton(
@@ -382,6 +384,37 @@ class _SectionDraftState extends State<SectionDraftScreen> {
           'Saved content',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        if (id != null && scope != 'category')
+          TextButton.icon(
+            onPressed: busy
+                ? null
+                : () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => ArticleEditorScreen(
+                          auth: widget.auth,
+                          id: id!,
+                          section: scope,
+                        ),
+                      ),
+                    );
+                    await run(load);
+                  },
+            icon: const Icon(Icons.edit_outlined),
+            label: const Text('Edit / Reorder / Remove'),
+          ),
+        if (scope == 'header' && newsletter!['header_image'] != null)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.network(
+              api.imageUrl(newsletter!['header_image'], kind: 'header'),
+              height: 190,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, e, s) => const Icon(Icons.image_outlined),
+            ),
+          ),
         if (scope == 'header')
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -393,6 +426,19 @@ class _SectionDraftState extends State<SectionDraftScreen> {
               .map(
                 (p) => Card(
                   child: ListTile(
+                    leading: p['image'] == null
+                        ? null
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              api.imageUrl(p['image'], kind: 'pick'),
+                              width: 56,
+                              height: 56,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, e, s) =>
+                                  const Icon(Icons.image_outlined),
+                            ),
+                          ),
                     title: Text(p['title']),
                     subtitle: Text(p['description'] ?? p['url']),
                   ),
@@ -403,6 +449,20 @@ class _SectionDraftState extends State<SectionDraftScreen> {
             (c) => Card(
               child: ListTile(
                 title: Text(c['category_name']),
+                onTap: () =>
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => ArticleEditorScreen(
+                          auth: widget.auth,
+                          id: id!,
+                          section: 'category',
+                          categoryId: int.parse('${c['id']}'),
+                        ),
+                      ),
+                    ).then((_) {
+                      if (mounted) run(load);
+                    }),
                 subtitle: Text(
                   (c['items'] as List).map((p) => p['title']).join('\n'),
                 ),

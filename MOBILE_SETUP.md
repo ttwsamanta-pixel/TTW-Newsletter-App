@@ -1,5 +1,10 @@
 # Flutter mobile setup
 
+## Full manager 0.3.0
+
+Version 0.3.0 / build 6 requires the matching backend and migration 003. The installed earlier app remains compatible with existing routes. The new APK adds full manager screens and native HTML save/copy/publishing. No database or publishing credentials are included in Flutter. See docs/UPDATE_0.3.0.md and HTML_PUBLISHING.md. iOS source is provided; compilation/signing requires macOS/Xcode and an Apple team. The optional web runner is for local visual verification, not a replacement for the PHP website.
+
+
 ## Version 0.2.2 / build 5
 
 Deploy the matching backend to use uploads/temporary/YYYY/Mon for new working images. Both current and previous mobile clients accept the paths returned by the server. Install the updated APK over the existing app after deployment.

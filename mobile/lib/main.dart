@@ -27,8 +27,8 @@ class TtwApp extends StatelessWidget {
       useMaterial3: true,
       scaffoldBackgroundColor: page,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: red,
-        primary: red,
+        seedColor: blue,
+        primary: blue,
         secondary: navy,
       ),
       appBarTheme: const AppBarTheme(
@@ -51,7 +51,7 @@ class TtwApp extends StatelessWidget {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: red,
+          backgroundColor: blue,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(13),
@@ -76,7 +76,26 @@ class TtwApp extends StatelessWidget {
           });
         }
         return !auth.ready
-            ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+            ? const Scaffold(
+                body: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Brand(size: 150),
+                      Text(
+                        'TTW Newsletter Manager',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: navy,
+                        ),
+                      ),
+                      SizedBox(height: 28),
+                      CircularProgressIndicator(),
+                    ],
+                  ),
+                ),
+              )
             : auth.user == null
             ? LoginScreen(auth: auth)
             : HomeScreen(auth: auth);

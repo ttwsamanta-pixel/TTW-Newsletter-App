@@ -1,5 +1,10 @@
 # Database migration
 
+## Full manager 0.3.0
+
+For the full manager 0.3.0, back up the live database and import migrations/003_full_manager.sql before deploying the new API. It adds newsletter_publications, newsletter_notification_reads, newsletter_password_resets and a nullable users.email field if absent. Existing users, newsletters and image paths are preserved. It is safe to rerun. Older initial migration instructions below apply to earlier installations.
+
+
 ## Completing the reported missing automation setup
 
 If `/system/check` lists all five new automation tables plus `newsletters.approved_at` and `newsletters.approved_by` as missing, back up the existing database, select it in phpMyAdmin, and import **`migrations/002_complete_automation_setup.sql`**. This script can also complete a migration that stopped at an existing unique index. Do not import fixture-schema.sql or create a replacement database.

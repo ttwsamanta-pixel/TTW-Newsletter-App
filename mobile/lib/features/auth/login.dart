@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/auth.dart';
 import '../../widgets/ui.dart';
+import 'forgot.dart';
 
 class LoginScreen extends StatefulWidget {
   final Auth auth;
@@ -13,7 +14,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginState extends State<LoginScreen> {
   final form = GlobalKey<FormState>();
   final username = TextEditingController(), password = TextEditingController();
-  bool busy = false, obscure = true;
+  bool busy = false, obscure = true, remember = true;
   String? error;
   @override
   void dispose() {
@@ -29,7 +30,7 @@ class _LoginState extends State<LoginScreen> {
       error = null;
     });
     try {
-      await widget.auth.login(username.text, password.text);
+      await widget.auth.login(username.text, password.text, remember: remember);
     } catch (e) {
       if (mounted) setState(() => error = e.toString());
     } finally {
@@ -44,7 +45,7 @@ class _LoginState extends State<LoginScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [navy, Color(0xffdce8fd), Color(0xfff9f7fc)],
+          colors: [Color(0xffa6ceff), Color(0xffedf4ff), Color(0xfff9f7fc)],
         ),
       ),
       child: SafeArea(
@@ -85,7 +86,7 @@ class _LoginState extends State<LoginScreen> {
                             TextFormField(
                               controller: username,
                               decoration: field(
-                                'Username',
+                                'Username / Email',
                                 icon: Icons.mail_outline,
                               ),
                               autofillHints: const [AutofillHints.username],
@@ -118,7 +119,30 @@ class _LoginState extends State<LoginScreen> {
                                   : null,
                               onFieldSubmitted: (_) => busy ? null : login(),
                             ),
-                            const SizedBox(height: 24),
+                            CheckboxListTile(
+                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                              controlAffinity: ListTileControlAffinity.leading,
+                              title: const Text('Remember me'),
+                              value: remember,
+                              onChanged: busy
+                                  ? null
+                                  : (v) => setState(() => remember = v ?? true),
+                            ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute<void>(
+                                    builder: (_) =>
+                                        ForgotPasswordScreen(auth: widget.auth),
+                                  ),
+                                ),
+                                child: const Text('Forgot Password?'),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
                             PrimaryButton(
                               'Login  →',
                               busy: busy,

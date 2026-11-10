@@ -27,7 +27,10 @@ $exitCode = 0;
 try {
     do {
         if ($drain && microtime(true) - $started >= $maxSeconds) break;
-        try { $worked = worker_tick(); }
+        try {
+            $worked = worker_tick();
+            @file_put_contents($storage.'/worker-heartbeat.json',json_encode(['time'=>time(),'checked_at'=>date(DATE_ATOM)]),LOCK_EX);
+        }
         catch (Throwable $e) {
             fwrite(STDERR, "Worker error; verify database configuration, migration and PHP extensions.\n");
             $exitCode = 1;

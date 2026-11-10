@@ -12,6 +12,7 @@ if(!db()->query('SHOW TABLES')->fetch()) {
         }
     }
 }
+foreach(explode(';',file_get_contents(dirname(__DIR__).'/migrations/003_full_manager.sql')) as $sql) { if(trim($sql)!=='') { $stmt=db()->query($sql); $stmt->closeCursor(); } }
 if((int)db()->query('SELECT COUNT(*) FROM users')->fetchColumn()>0)exit("Fixture already seeded.\n");
 $stmt=db()->prepare('INSERT INTO users(username,password_hash,role,first_name,permissions) VALUES(?,?,?,?,?)');
 $stmt->execute(['test_admin',password_hash('ttw_test_password',PASSWORD_DEFAULT),'admin','Test Admin','[]']);

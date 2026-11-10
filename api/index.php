@@ -3,6 +3,8 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/automation/jobs.php';
 require_once dirname(__DIR__) . '/newsletter_renderer.php';
 require_once dirname(__DIR__) . '/includes/api-diagnostics.php';
+require_once dirname(__DIR__) . '/includes/manager-routes.php';
+require_once dirname(__DIR__) . '/includes/password-reset.php';
 
 function api_reply(array $data,int $code=200): never {
     http_response_code($code); header('Content-Type: application/json; charset=utf-8');
@@ -54,12 +56,17 @@ try {
     if ($route==='/auth/login' && $method==='POST') {
         api_rate('login-ip:'.($_SERVER['REMOTE_ADDR'] ?? ''),10);
         $username=trim((string)($input['username'] ?? ''));
-        $stmt=db()->prepare('SELECT * FROM users WHERE username=? AND status="active" LIMIT 1'); $stmt->execute([$username]); $user=$stmt->fetch();
+        $stmt=db()->prepare('SELECT * FROM users WHERE (username=? OR email=?) AND status="active" LIMIT 1'); $stmt->execute([$username,$username]); $user=$stmt->fetch();
         $valid=password_verify((string)($input['password'] ?? ''),$user['password_hash'] ?? '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.');
         if (!$user || !$valid) api_reply(['error'=>'Invalid username or password.'],401);
         $token=bin2hex(random_bytes(32));
         db()->prepare('INSERT INTO api_tokens(user_id,token_hash,password_fingerprint,expires_at) VALUES(?,?,?,DATE_ADD(NOW(),INTERVAL 7 DAY))')->execute([$user['id'],hash('sha256',$token),hash('sha256',$user['password_hash'])]);
         api_reply(['token'=>$token,'expires_in'=>604800,'user'=>['id'=>(int)$user['id'],'name'=>current_user_name($user),'role'=>$user['role'],'permissions'=>user_permissions($user)]]);
+    }
+    if ($route==='/auth/forgot-password' && $method==='POST') {
+        api_rate('reset-ip:'.($_SERVER['REMOTE_ADDR'] ?? ''),3);
+        request_password_reset(mb_substr(trim((string)($input['identifier'] ?? '')),0,254));
+        api_reply(['ok'=>true,'message'=>'If the account has a registered email, a reset link will be sent.']);
     }
     $user=api_user();
     // Check setup before throttling: the rate-limit table itself may be missing.
@@ -68,6 +75,7 @@ try {
         api_reply(automation_setup_check(db()));
     }
     api_rate('user:'.$user['id'],120);
+    manager_routes($route,$method,$input,$user);
     if ($route==='/auth/me' && $method==='GET') api_reply(['id'=>(int)$user['id'],'name'=>current_user_name($user),'role'=>$user['role'],'permissions'=>user_permissions($user)]);
     if ($route==='/auth/logout' && $method==='POST') {
         if (isset($user['token_id'])) db()->prepare('UPDATE api_tokens SET revoked_at=NOW() WHERE id=?')->execute([$user['token_id']]);
@@ -110,7 +118,7 @@ try {
             if (trim($n['header_title'])==='' || trim($n['subject_title'])==='') throw new InvalidArgumentException('Add Header news and a manually entered Email Title before approval.');
             db()->prepare('UPDATE newsletters SET approved_at=NOW(),approved_by=? WHERE id=?')->execute([$user['id'],$id]); api_reply(['ok'=>true]);
         }
-        if ($action==='' && $method==='GET') api_reply(['newsletter'=>$n]);
+        if ($action==='' && $method==='GET') { $n['publication']=publication_data($id); api_reply(['newsletter'=>$n]); }
         if ($action==='' && $method==='POST') {
             // Metadata edits preserve the existing article URLs, images and link collections.
             $data=newsletter_form_data($n);
@@ -157,8 +165,10 @@ try {
     }
     api_reply(['error'=>'Endpoint or method not found.'],404);
 } catch(DomainException $e) { api_reply(['error'=>'Newsletter already exists. Open existing, replace an unapproved draft, or cancel.','existing_id'=>(int)$e->getMessage()],409); }
+catch(UnexpectedValueException $e) { api_reply(['error'=>'Permission denied.'],403); }
 catch(OutOfBoundsException $e) { api_reply(['error'=>'Resource not found.'],404); }
 catch(InvalidArgumentException | JsonException $e) { api_reply(['error'=>$e instanceof JsonException ? 'Invalid JSON.' : $e->getMessage()],422); }
+catch(LogicException $e) { api_reply(['error'=>$e->getMessage()==='FILE_EXISTS' ? 'Newsletter HTML already exists. An administrator can explicitly replace it.':'Request could not be completed.','code'=>$e->getMessage()==='FILE_EXISTS' ? 'FILE_EXISTS':'CONFLICT'],409); }
 catch(PDOException $e) {
     error_log('TTW API database failure: SQLSTATE=' . (string)$e->getCode() . '; driver_code=' . (int)($e->errorInfo[1] ?? 0));
     [$status,$message]=api_database_failure($e);

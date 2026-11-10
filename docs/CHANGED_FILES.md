@@ -1,5 +1,10 @@
 # Delivery map
 
+## Full manager 0.3.0
+
+Version 0.3.0 adds manager/publishing/password-reset services and API routes, a separate newsletter-api receiver, migration 003, web publishing/approval actions, reset form and worker heartbeat. Flutter gains full blue manager navigation and management screens while reusing existing create/job/preview flows. Adds receiver, manager, password-reset and mobile integration tests. See UPDATE_0.3.0.md.
+
+
 ## Version 0.2.2
 
 Changes automation/fetcher.php to write processed images into uploads/temporary/YYYY/Mon and automation/drafts.php to accept both new and legacy working paths. Adds tests/temporary-images.php; final newsletter file handling is preserved. Android version advances to 0.2.2 / build 5.

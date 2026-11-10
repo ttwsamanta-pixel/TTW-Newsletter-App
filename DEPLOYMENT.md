@@ -1,5 +1,9 @@
 # Deployment
 
+## Full manager 0.3.0
+
+Back up the live database, apply migrations/003_full_manager.sql, deploy the web ZIP inside /New and configure the separate main-domain upload receiver before installing the new APK. Keep config.local.php, uploads, storage and the cron. See docs/UPDATE_0.3.0.md and HTML_PUBLISHING.md. Deny access to private PHP configuration on both Apache and Nginx. Earlier release notes below are historical.
+
 ## Shared storage (web 0.2.3)
 
 For APP_BASE_URL ending /New, IMAGE_UPLOAD_ROOT defaults to ../uploads and LEGACY_IMAGE_UPLOAD_ROOT defaults to ./uploads. All writes use the shared root, while reads also support old New-only images. Explicit configuration overrides still take precedence; review earlier custom paths. PHP must be able to write shared uploads. The root manual app continues using its existing paths. See docs/UPDATE_0.2.3.md.

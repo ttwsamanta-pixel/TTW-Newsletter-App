@@ -52,6 +52,7 @@ class Api {
     String route, {
     Map<String, dynamic>? data,
     Map<String, String> query = const {},
+    Duration timeout = const Duration(seconds: 30),
   }) async {
     try {
       final response =
@@ -62,7 +63,7 @@ class Api {
                       headers: {...headers, 'Content-Type': 'application/json'},
                       body: jsonEncode(data),
                     ))
-              .timeout(const Duration(seconds: 30));
+              .timeout(timeout);
       return decode(response.statusCode, response.body);
     } on TimeoutException {
       throw ApiException('The server took too long. Try again.');
@@ -91,11 +92,15 @@ class Api {
     return result;
   }
 
-  Future<Map<String, dynamic>> upload(String path) async {
+  Future<Map<String, dynamic>> upload(
+    String path, {
+    String route = '/uploads/promotion',
+    String fileKey = 'banner',
+  }) async {
     try {
-      final request = http.MultipartRequest('POST', uri('/uploads/promotion'));
+      final request = http.MultipartRequest('POST', uri(route));
       request.headers.addAll(headers);
-      request.files.add(await http.MultipartFile.fromPath('banner', path));
+      request.files.add(await http.MultipartFile.fromPath(fileKey, path));
       final response = await client
           .send(request)
           .timeout(const Duration(seconds: 45));

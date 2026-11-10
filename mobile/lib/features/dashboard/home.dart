@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../../core/auth.dart';
-import '../../models/newsletter.dart';
 import '../../widgets/ui.dart';
+import '../../widgets/manager_ui.dart';
 import '../create_newsletter/create.dart';
-import '../automation/job.dart';
-import '../newsletter_preview/preview.dart';
+import '../create_newsletter/sections.dart';
+import '../newsletters/library.dart';
+import '../newsletters/details.dart';
+import '../reports/reports.dart';
+import '../settings/settings.dart';
+import '../notifications/notifications.dart';
+import '../automation/monitor.dart';
 
 class HomeScreen extends StatefulWidget {
   final Auth auth;
@@ -15,12 +20,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeState extends State<HomeScreen> {
-  int tab = 0, historyPage = 1;
+  int tab = 0;
+  String libraryStatus = '';
   Map<String, dynamic>? data;
-  List<dynamic> jobs = [], categories = [];
-  List<Newsletter> history = [];
-  bool busy = false, more = true;
   String? error;
+  bool busy = true;
   Auth get auth => widget.auth;
   @override
   void initState() {
@@ -29,30 +33,14 @@ class _HomeState extends State<HomeScreen> {
   }
 
   Future<void> load() async {
-    setState(() {
-      busy = true;
-      error = null;
-    });
+    if (!auth.can('view')) {
+      setState(() => busy = false);
+      return;
+    }
+    setState(() => error = null);
     try {
-      final results = await Future.wait([
-        if (auth.can('view')) auth.api.request('/newsletters'),
-        if (auth.can('create')) auth.api.request('/automation/jobs'),
-        if (auth.can('view')) auth.api.request('/categories'),
-      ]);
-      if (!mounted) return;
-      var i = 0;
-      setState(() {
-        if (auth.can('view')) {
-          data = results[i++];
-          history = (data!['newsletters'] as List)
-              .map((r) => Newsletter.fromJson(r))
-              .toList();
-          historyPage = 1;
-          more = history.length == 30;
-        }
-        if (auth.can('create')) jobs = results[i++]['jobs'] as List;
-        if (auth.can('view')) categories = results[i++]['categories'] as List;
-      });
+      final r = await auth.api.request('/dashboard');
+      if (mounted) setState(() => data = r);
     } catch (e) {
       if (mounted) setState(() => error = e.toString());
     } finally {
@@ -60,364 +48,372 @@ class _HomeState extends State<HomeScreen> {
     }
   }
 
-  Future<void> open(Widget screen) async {
-    await Navigator.of(context)
-        .push(MaterialPageRoute<void>(builder: (_) => screen));
+  Future<void> create() async {
+    await openPage(context, CreateModeScreen(auth: auth));
     if (mounted) load();
   }
 
-  Future<void> loadMore() async {
-    try {
-      final r = await auth.api.request(
-        '/newsletters',
-        query: {'page': '${historyPage + 1}'},
-      );
-      if (mounted) {
-        setState(() {
-          final rows = (r['newsletters'] as List)
-              .map((r) => Newsletter.fromJson(r))
-              .toList();
-          history.addAll(rows);
-          historyPage++;
-          more = rows.length == 30;
-        });
-      }
-    } catch (e) {
-      if (mounted) showFailure(context, e);
-    }
-  }
-
-  Widget newsletterTile(Newsletter n) => Card(
-    child: ListTile(
-      leading: const Icon(Icons.calendar_month_outlined, color: navy),
-      title: Text(
-        '${n.date} · ${n.edition == 'M' ? 'Morning' : 'Evening'}',
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-      ),
-      subtitle: Text(
-        '${n.subject}\n${n.approved ? '✓ Approved' : 'Draft'}',
-        maxLines: 3,
-      ),
-      trailing: const Icon(Icons.visibility_outlined),
-      onTap: () => open(PreviewScreen(auth: auth, id: n.id)),
-    ),
-  );
-  Widget edition(String e) {
-    final today = (data?['today'] as List? ?? [])
-        .where((n) => n['edition'] == e)
-        .toList();
-    final status = today.isEmpty
-        ? '○ Not created'
-        : today.first['approved_at'] != null
-        ? '✓ Approved'
-        : '✓ Draft created';
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          gradient: LinearGradient(
-            colors: e == 'M'
-                ? [const Color(0xff15b8df), const Color(0xff4936ef)]
-                : [const Color(0xffe359c0), red],
+  Widget metric(String label, dynamic value, List<Color> colors) => Expanded(
+    child: Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(colors: colors),
+        boxShadow: [
+          BoxShadow(
+            color: colors.first.withValues(alpha: .15),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              e == 'M' ? Icons.wb_sunny_outlined : Icons.nightlight_outlined,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$value',
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
               color: Colors.white,
             ),
-            const SizedBox(height: 12),
-            Text(
-              '${e == 'M' ? 'Morning' : 'Evening'}\nEdition',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              status,
-              style: const TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget dashboard() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          gradient: const LinearGradient(
-            colors: [Color(0xffe2ebff), Colors.white],
           ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+          ),
+        ],
+      ),
+    ),
+  );
+  Widget dashboard() {
+    final stats = data?['stats'] as Map? ?? {};
+    final today = data?['today'] as List? ?? [];
+    return RefreshIndicator(
+      onRefresh: load,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        children: [
+          Text(
+            'Good ${DateTime.now().hour < 12 ? 'Morning' : 'Afternoon'},',
+            style: const TextStyle(
+              color: navy,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            auth.user?['name'] ?? 'TTW Team',
+            style: const TextStyle(
+              color: navy,
+              fontSize: 27,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 7),
+          const Text(
+            'Your daily travel news, ready for the world.',
+            style: TextStyle(color: Colors.blueGrey),
+          ),
+          const SizedBox(height: 24),
+          if (busy) const LinearProgressIndicator(),
+          if (error != null)
+            EmptyState('Unable to load dashboard', error!, retry: load),
+          if (data != null) ...[
+            Row(
+              children: [
+                metric('Total', stats['total'], [
+                  const Color(0xff16b6dc),
+                  blue,
+                ]),
+                const SizedBox(width: 12),
+                metric('Morning', stats['morning'], [
+                  const Color(0xff60cc51),
+                  const Color(0xff159f4a),
+                ]),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                metric('Evening', stats['evening'], [
+                  const Color(0xffffb827),
+                  const Color(0xffff751c),
+                ]),
+                const SizedBox(width: 12),
+                metric('This Month', stats['this_month'], [
+                  const Color(0xff9b64ff),
+                  const Color(0xff6742df),
+                ]),
+              ],
+            ),
+            const SizedBox(height: 25),
+            const Text(
+              "Today's Newsletter",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Card(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Good ${DateTime.now().hour < 12 ? 'Morning' : 'Afternoon'},\n${auth.user?['name']} 👋',
-                    style: const TextStyle(
-                      fontSize: 23,
-                      fontWeight: FontWeight.w800,
-                      color: navy,
+                  for (final e in ['M', 'E'])
+                    Builder(
+                      builder: (ctx) {
+                        final matches = today.where((n) => n['edition'] == e);
+                        final n = matches.isEmpty ? null : matches.first;
+                        return ListTile(
+                          leading: Icon(
+                            e == 'M'
+                                ? Icons.wb_sunny_outlined
+                                : Icons.nightlight_outlined,
+                            color: e == 'M' ? Colors.orange : blue,
+                          ),
+                          title: Text(e == 'M' ? 'Morning' : 'Evening'),
+                          trailing: StatusBadge(
+                            n == null
+                                ? 'Not Created'
+                                : n['approved_at'] == null
+                                ? 'Draft'
+                                : 'Approved',
+                          ),
+                          onTap: n == null
+                              ? auth.can('create')
+                                    ? create
+                                    : null
+                              : () => openPage(
+                                  context,
+                                  NewsletterDetailsScreen(
+                                    auth: auth,
+                                    id: number(n['id']),
+                                  ),
+                                ),
+                        );
+                      },
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Manage your daily newsletters\nand keep your audience updated.',
-                  ),
                 ],
               ),
             ),
-            const Brand(size: 90),
+            const SizedBox(height: 18),
           ],
-        ),
-      ),
-      const SizedBox(height: 20),
-      Row(children: [edition('M'), const SizedBox(width: 14), edition('E')]),
-      const SizedBox(height: 20),
-      if (auth.can('create'))
-        PrimaryButton(
-          '+  Create Newsletter',
-          onPressed: () => open(CreateScreen(auth: auth)),
-        ),
-      const SizedBox(height: 18),
-      const Text(
-        'Recent Newsletters',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-      if (history.isEmpty)
-        const Padding(
-          padding: EdgeInsets.all(16),
-          child: Text('No newsletters yet.'),
-        ),
-      ...history.take(5).map(newsletterTile),
-      const SizedBox(height: 18),
-      const Text(
-        'Automation Jobs',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-      ...jobs.map(
-        (j) => Card(
-          child: ListTile(
-            leading: Icon(
-              j['status'] == 'failed'
-                  ? Icons.warning_amber
-                  : Icons.auto_awesome_motion,
-              color: navy,
-            ),
-            title: Text(
-              'Job #${j['id']} · ${(j['status'] as String).replaceAll('_', ' ')}',
-            ),
-            subtitle: Text('${j['completed']}/${j['total']} articles'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () =>
-                open(JobScreen(auth: auth, id: int.parse('${j['id']}'))),
+          if (auth.can('create'))
+            PrimaryButton('+ Create Newsletter', onPressed: create),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            children: [
+              if (auth.can('create'))
+                ActionChip(
+                  avatar: const Icon(Icons.auto_mode, size: 18),
+                  label: const Text('Automation'),
+                  onPressed: () =>
+                      openPage(context, AutomationScreen(auth: auth)),
+                ),
+              if (auth.can('view'))
+                ActionChip(
+                  avatar: const Icon(Icons.edit_note, size: 18),
+                  label: Text('${stats['drafts'] ?? 0} Drafts'),
+                  onPressed: () => setState(() {
+                    libraryStatus = 'draft';
+                    tab = 1;
+                  }),
+                ),
+            ],
           ),
-        ),
-      ),
-      if (jobs.isEmpty)
-        const Padding(
-          padding: EdgeInsets.all(16),
-          child: Text('Your processing jobs will appear here.'),
-        ),
-    ],
-  );
-  Future<void> editCategory([Map<String, dynamic>? c]) async {
-    final name = TextEditingController(text: c?['category_name']);
-    final slug = TextEditingController(text: c?['category_slug']);
-    final aliases = TextEditingController(text: c?['aliases']);
-    final order = TextEditingController(text: '${c?['display_order'] ?? 0}');
-    bool active = c == null || int.parse('${c['active']}') == 1;
-    final accepted = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, set) => AlertDialog(
-          title: Text(c == null ? 'Add category' : 'Edit category'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: name, decoration: field('Name')),
-                const SizedBox(height: 12),
-                TextField(controller: slug, decoration: field('URL slug')),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: aliases,
-                  decoration: field('Aliases, comma-separated'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: order,
-                  decoration: field('Display order'),
-                  keyboardType: TextInputType.number,
-                ),
-                SwitchListTile(
-                  title: const Text('Active'),
-                  value: active,
-                  onChanged: (v) => set(() => active = v),
-                ),
-              ],
+          const SizedBox(height: 20),
+          if (data != null) ...[
+            const Text(
+              'Recent Newsletters',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Save'),
-            ),
+            const SizedBox(height: 8),
+            if ((data!['recent'] as List).isEmpty)
+              const EmptyState(
+                'No Data Found',
+                'Create your first newsletter.',
+              ),
+            for (final n in (data!['recent'] as List).take(5))
+              NewsletterCard(
+                auth: auth,
+                n: n,
+                onTap: () async {
+                  await openPage(
+                    context,
+                    NewsletterDetailsScreen(auth: auth, id: number(n['id'])),
+                  );
+                  if (mounted) load();
+                },
+              ),
           ],
-        ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
-    if (accepted == true) {
-      try {
-        await auth.api.request(
-          '/categories',
-          data: {
-            'id': c?['id'] ?? 0,
-            'category_name': name.text,
-            'category_slug': slug.text,
-            'aliases': aliases.text,
-            'display_order': int.tryParse(order.text) ?? 0,
-            'active': active,
-          },
-        );
-        await load();
-      } catch (e) {
-        if (mounted) showFailure(context, e);
-      }
-    }
-    name.dispose();
-    slug.dispose();
-    aliases.dispose();
-    order.dispose();
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text(
-        'Newsletter Manager',
-        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 19),
-      ),
-      leading: const Padding(
-        padding: EdgeInsets.all(8),
-        child: Brand(size: 38),
-      ),
-      actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))],
-    ),
-    body: RefreshIndicator(
-      onRefresh: load,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 12, 18, 30),
-        children: [
-          if (busy) const LinearProgressIndicator(),
-          if (error != null) Notice(error!),
-          if (tab == 0) dashboard(),
-          if (tab == 1) ...[
-            const Text(
-              'Newsletter History',
-              style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
+    appBar: tab == 0
+        ? AppBar(
+            leading: IconButton(
+              tooltip: 'More',
+              onPressed: () => setState(() => tab = 4),
+              icon: const Icon(Icons.menu),
             ),
-            ...history.map(newsletterTile),
-            if (more)
-              TextButton(onPressed: loadMore, child: const Text('Load more')),
-          ],
-          if (tab == 2) ...[
-            const Text(
-              'Categories',
-              style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
-            ),
-            const Text('Original section names, matched without AI.'),
-            if (auth.user?['role'] == 'admin')
-              TextButton.icon(
-                onPressed: () => editCategory(),
-                icon: const Icon(Icons.add),
-                label: const Text('Add category'),
+            title: const Brand(size: 52),
+            actions: [
+              IconButton(
+                tooltip: 'Notifications',
+                onPressed: () =>
+                    openPage(context, NotificationsScreen(auth: auth)),
+                icon: const Icon(Icons.notifications_outlined),
               ),
-            ...categories.map(
-              (c) => Card(
-                child: ListTile(
-                  leading: const Icon(Icons.folder_outlined, color: navy),
-                  title: Text(c['category_name']),
-                  subtitle: Text(
-                    '${c['aliases']} · ${int.parse('${c['active']}') == 1 ? 'Active' : 'Inactive'}',
-                  ),
-                  onTap: auth.user?['role'] == 'admin'
-                      ? () => editCategory(c)
-                      : null,
-                ),
-              ),
-            ),
-          ],
-          if (tab == 3) ...[
-            const Brand(size: 90),
-            Text(
-              '${auth.user?['name']}',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            Text('${auth.user?['role']}'),
-            const SizedBox(height: 18),
-            const Text(
-              'API server',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            SelectableText(auth.api.base),
-            const SizedBox(height: 12),
-            const Text(
-              'Drafts are generated only when requested. Approval never sends an email campaign.',
-            ),
-            const SizedBox(height: 24),
-            PrimaryButton(
-              'Sign out',
-              onPressed: () async {
-                try {
-                  await auth.logout();
-                } catch (e) {
-                  if (context.mounted) showFailure(context, e);
-                }
-              },
-            ),
-          ],
-        ],
-      ),
-    ),
+            ],
+          )
+        : null,
+    body: tab == 0
+        ? dashboard()
+        : tab == 1
+        ? auth.can('view')
+              ? LibraryScreen(
+                  key: ValueKey(libraryStatus),
+                  auth: auth,
+                  initialStatus: libraryStatus,
+                )
+              : const EmptyState(
+                  'Permission required',
+                  'Your account cannot view newsletters.',
+                )
+        : tab == 3
+        ? auth.can('view')
+              ? ReportsScreen(auth: auth)
+              : const EmptyState(
+                  'Permission required',
+                  'Your account cannot view reports.',
+                )
+        : SettingsScreen(auth: auth),
     bottomNavigationBar: NavigationBar(
       selectedIndex: tab,
-      onDestinationSelected: (n) => setState(() => tab = n),
+      onDestinationSelected: (i) {
+        if (i == 2) {
+          if (auth.can('create')) create();
+          return;
+        }
+        setState(() {
+          tab = i;
+          if (i == 1) libraryStatus = '';
+        });
+      },
       destinations: const [
         NavigationDestination(
           icon: Icon(Icons.home_outlined),
           selectedIcon: Icon(Icons.home),
           label: 'Home',
         ),
-        NavigationDestination(icon: Icon(Icons.history), label: 'History'),
         NavigationDestination(
-          icon: Icon(Icons.folder_outlined),
-          label: 'Categories',
+          icon: Icon(Icons.newspaper_outlined),
+          label: 'Newsletters',
         ),
         NavigationDestination(
-          icon: Icon(Icons.settings_outlined),
-          label: 'Settings',
+          icon: CircleAvatar(
+            backgroundColor: blue,
+            radius: 19,
+            child: Icon(Icons.add, color: Colors.white),
+          ),
+          label: 'Create',
         ),
+        NavigationDestination(
+          icon: Icon(Icons.bar_chart_outlined),
+          label: 'Reports',
+        ),
+        NavigationDestination(icon: Icon(Icons.more_horiz), label: 'More'),
       ],
+    ),
+  );
+}
+
+class CreateModeScreen extends StatelessWidget {
+  final Auth auth;
+  const CreateModeScreen({super.key, required this.auth});
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Create Newsletter')),
+    body: SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.all(22),
+        children: [
+          const Text(
+            'How would you like to create?',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 24,
+              color: navy,
+            ),
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Use one batch of links, or save each section as the news arrives.',
+          ),
+          const SizedBox(height: 30),
+          _mode(
+            context,
+            'All Links at Once',
+            'Paste all section links in one go and import.',
+            Icons.copy_all_outlined,
+            CreateScreen(auth: auth),
+          ),
+          const SizedBox(height: 18),
+          _mode(
+            context,
+            'Section by Section',
+            'Basic, Header, Pick News, More News, Categories and Promotion. Save and resume in any order.',
+            Icons.view_list_outlined,
+            SectionDraftScreen(auth: auth),
+          ),
+        ],
+      ),
+    ),
+  );
+  Widget _mode(
+    BuildContext context,
+    String title,
+    String subtitle,
+    IconData icon,
+    Widget screen,
+  ) => Card(
+    child: InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: () => openPage(context, screen),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: blue.withValues(alpha: .1),
+              child: Icon(icon, color: blue),
+            ),
+            const SizedBox(width: 17),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(subtitle),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right),
+          ],
+        ),
+      ),
     ),
   );
 }

@@ -1,5 +1,13 @@
 # TTW Newsletter Manager
 
+## Full manager release 0.3.0
+
+The mobile app now includes the blue TTW manager design, real dashboard totals, filtered newsletter library, manual section editing, notifications, worker monitor, reports, Category Master, employee permissions, profile/settings and secure HTML publishing. The existing PHP engine, shared database, uploads, renderer and cron remain in use.
+
+Deploy the additive database migration before the web update, configure the separate main-website upload API, then install the APK. Start with [UPDATE_0.3.0](docs/UPDATE_0.3.0.md), [HTML publishing](HTML_PUBLISHING.md) and [API additions](API.md). Live publishing and reset mail require server configuration. Earlier release instructions below describe previous versions.
+
+Current downloads: [Android 0.3.0 / build 6](https://github.com/ttwsamanta-pixel/TTW-Newsletter-App/releases/download/v0.3.0/ttw-newsletter-automation-debug.apk), [full web ZIP](https://github.com/ttwsamanta-pixel/TTW-Newsletter-App/releases/download/v0.3.0/TTW_Newsletter_Web_Updated.zip). Deploy inside /New and apply migrations/003_full_manager.sql first. Existing website accounts remain in use.
+
 ## Shared uploads web update 0.2.3
 
 New /New newsletters and the installed Android app now save final images in the original root app uploads/YYYY/Mon and working images in uploads/temporary/YYYY/Mon. Old New-only files remain readable. Deploy the v0.2.3 web package inside /New; no SQL or APK reinstall is needed. See [deployment instructions](docs/UPDATE_0.2.3.md).

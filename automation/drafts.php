@@ -48,6 +48,10 @@ function save_newsletter_draft(array $input, array $user): int {
             $n = blank_newsletter($date,$edition);
         }
         if (array_key_exists('subject_title',$input)) $n['subject_title']=trim($input['subject_title']);
+        if (array_key_exists('hidden_text',$input)) {
+            if (!is_string($input['hidden_text']) || mb_strlen($input['hidden_text'])>5000) throw new InvalidArgumentException('Hidden Preview Text is too long.');
+            $n['hidden_text']=trim($input['hidden_text']);
+        }
         $data = newsletter_form_data($n);
         foreach (['promotion_url','promotion_text'] as $key) {
             if (array_key_exists($key,$input)) {

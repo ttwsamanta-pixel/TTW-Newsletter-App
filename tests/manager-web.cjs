@@ -1,0 +1,21 @@
+const {chromium}=require('./.runtime/node_modules/playwright');
+const {execFileSync}=require('node:child_process');
+(async()=>{
+ const php=`$pdo=new PDO('mysql:host=127.0.0.1;port=33319;dbname=ttw_manager_test','root','manager_fixture_only');$date='2091-01-02';while($pdo->query("SELECT COUNT(*) FROM newsletters WHERE newsletter_date=".$pdo->quote($date))->fetchColumn())$date=(new DateTimeImmutable($date))->modify('+1 day')->format('Y-m-d');$pdo->prepare('INSERT INTO newsletters(newsletter_date,edition,subject_title,header_title,header_description,header_url,created_by) VALUES(?,"E","Web Publication Fixture","Original Web Header","Body words...","https://www.travelandtourworld.com/news/article/test/",1)')->execute([$date]);echo $pdo->lastInsertId();`;
+ const id=execFileSync('C:/xampp/php/php.exe',['-r',php],{encoding:'utf8'}).trim();
+ const browser=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+ const page=await browser.newPage({viewport:{width:1365,height:900}});
+ await page.route('https://**',r=>r.abort());
+ await page.goto('http://127.0.0.1:8090/New/login.php');
+ await page.locator('[name=username]').fill('manager_admin');await page.locator('[name=password]').fill('fixture_password_123');await page.locator('button[type=submit]').click();
+ await page.goto(`http://127.0.0.1:8090/New/view.php?id=${id}`);
+ await page.getByRole('button',{name:'Approve Newsletter',exact:true}).click();
+ await page.getByRole('button',{name:'Publish HTML',exact:true}).click();
+ await page.getByText('HTML published successfully.',{exact:true}).waitFor();
+ await page.getByRole('link',{name:'View HTML',exact:true}).waitFor();
+ const download=await page.request.get(`http://127.0.0.1:8090/New/download.php?id=${id}`);
+ if(download.status()!==200||!download.headers()['content-disposition']?.includes('.html')||!(await download.text()).includes('Original Web Header'))throw Error('Existing download regressed.');
+ const denied=await page.request.post('http://127.0.0.1:8090/New/publish.php',{form:{id,action:'approve'}});if(denied.status()!==403)throw Error('Web publishing CSRF was bypassed.');
+ await page.screenshot({path:'tests/.runtime/web-html-published.png',fullPage:true});
+ await browser.close();console.log('PASS: web sign-in, existing preview, approve, Publish HTML, public URL, original download and CSRF rejection.');
+})().catch(e=>{console.error(e);process.exit(1)});
