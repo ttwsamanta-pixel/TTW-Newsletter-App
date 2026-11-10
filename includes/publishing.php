@@ -7,6 +7,15 @@ function publishing_config(): array {
     return ['url'=>defined('TTW_PUBLISH_API_URL') ? TTW_PUBLISH_API_URL : (getenv('TTW_PUBLISH_API_URL') ?: ''),
         'token'=>defined('TTW_PUBLISH_TOKEN') ? TTW_PUBLISH_TOKEN : (getenv('TTW_PUBLISH_TOKEN') ?: '')];
 }
+function publishing_endpoint_allowed(string $url,bool $localTest=false): bool {
+    $p=parse_url($url);
+    if (!$p || isset($p['user']) || isset($p['pass']) || isset($p['query']) || isset($p['fragment'])) return false;
+    if ($localTest && ($p['scheme'] ?? '')==='http' && ($p['host'] ?? '')==='127.0.0.1') return true;
+    return ($p['scheme'] ?? '')==='https'
+        && strtolower($p['host'] ?? '')==='www.travelandtourworld.com'
+        && !isset($p['port'])
+        && in_array($p['path'] ?? '',['/newsletter-api/upload.php','/newsletter/newsletter-api/upload.php'],true);
+}
 function publication_data(int $id): array {
     $s=db()->prepare('SELECT * FROM newsletter_publications WHERE newsletter_id=?'); $s->execute([$id]);
     $p=$s->fetch() ?: ['status'=>'unpublished','public_url'=>null];
@@ -55,7 +64,7 @@ function publish_newsletter(int $id,array $user,bool $replace=false): array {
     if (!can('edit',$user) || !can('download',$user) || ($replace && !is_admin($user))) throw new UnexpectedValueException('Publishing permission denied.');
     $config=publishing_config(); $parts=parse_url($config['url']);
     $test=getenv('TTW_ALLOW_LOCAL_HTTP')==='1' && ($parts['scheme'] ?? '')==='http' && ($parts['host'] ?? '')==='127.0.0.1';
-    if (!$test && (($parts['scheme'] ?? '')!=='https' || ($parts['host'] ?? '')!=='www.travelandtourworld.com' || ($parts['path'] ?? '')!=='/newsletter-api/upload.php' || isset($parts['user']) || isset($parts['query']))) throw new InvalidArgumentException('Configure the main website publishing API first.');
+    if (!publishing_endpoint_allowed($config['url'],$test)) throw new InvalidArgumentException('Configure the main website publishing API first.');
     if (strlen($config['token'])<32) throw new InvalidArgumentException('Configure the server-side publishing token first.');
     $pdo=db(); $pdo->beginTransaction(); $temp=null;
     try {

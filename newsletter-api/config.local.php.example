@@ -1,5 +1,7 @@
 <?php
 // MAIN WEBSITE ONLY: copy to config.local.php and supply a shared private token.
 define('NEWSLETTER_UPLOAD_TOKEN','REPLACE_WITH_AT_LEAST_32_RANDOM_CHARACTERS');
-define('NEWSLETTER_HTML_ROOT',dirname(__DIR__).'/newsletter');
+// HTML root is detected automatically for both supported API locations.
+// Only override for a custom server layout:
+// define('NEWSLETTER_HTML_ROOT','/absolute/path/to/public_html/newsletter');
 define('NEWSLETTER_PUBLIC_BASE','https://www.travelandtourworld.com/newsletter');

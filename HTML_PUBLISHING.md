@@ -1,5 +1,9 @@
 # Main-domain HTML publishing
 
+## Receiver inside newsletter/ (also supported)
+
+For `https://www.travelandtourworld.com/newsletter/newsletter-api/upload.php`, use the nested-location update in **app/NESTED_PUBLISHING_UPDATE.md**. It provides the application patch and the complete receiver package. The receiver detects its HTML root for either supported location. Existing explicit NEWSLETTER_HTML_ROOT settings still take precedence: in the nested location use `dirname(__DIR__)`, not `dirname(__DIR__).'/newsletter'`. Keep PHP enabled for the receiver subfolder only while disabling PHP execution in public year/month HTML folders. No SQL or APK update is needed. The instructions below continue to describe the original root-level receiver, which also remains supported.
+
 The newsletter server remains the trusted controller. Web and mobile use the same newsletter database and PHP renderer. The backend sends approved HTML over HTTPS to a separate receiver on the main website. No Flutter/JavaScript client receives the publishing token, and the newsletter server never writes to the other hosting filesystem directly. No AI or Zoho service is used.
 
 ## Deploy the main website receiver
