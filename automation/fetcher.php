@@ -130,10 +130,8 @@ function process_image(string $bytes, string $date, int $width, int $height): st
     ob_start(); imagejpeg($target,null,90); $output=ob_get_clean(); imagedestroy($src); imagedestroy($target);
     // Working files are separate from the final issue images, grouped by issue month.
     $directory='uploads/temporary/' . date('Y/M',strtotime($date));
-    $root=dirname(__DIR__);
-    if (!is_dir($root.'/'.$directory) && !@mkdir($root.'/'.$directory,0775,true) && !is_dir($root.'/'.$directory)) throw new RuntimeException('Temporary image folder could not be created.');
     $path=$directory.'/auto_'.bin2hex(random_bytes(12)).'.jpg';
-    if (@file_put_contents($root.'/'.$path,$output,LOCK_EX)!==strlen($output)) throw new RuntimeException('Image could not be saved.');
+    if (@file_put_contents(upload_disk_path($path,true),$output,LOCK_EX)!==strlen($output)) throw new RuntimeException('Image could not be saved.');
     return $path;
 }
 function missing_image(string $date, int $width, int $height): string {

@@ -15,8 +15,9 @@ defined('NEWSLETTER_BASE_URL') || define('NEWSLETTER_BASE_URL', getenv('TTW_NEWS
 defined('TTW_API_SECRET') || define('TTW_API_SECRET', getenv('TTW_API_SECRET') ?: DB_PASS);
 require_once __DIR__ . '/includes/image-paths.php';
 defined('LEGACY_APP_BASE_URL') || define('LEGACY_APP_BASE_URL', getenv('TTW_LEGACY_APP_BASE_URL') ?: legacy_image_base_url(APP_BASE_URL));
-defined('IMAGE_UPLOAD_ROOT') || define('IMAGE_UPLOAD_ROOT', getenv('TTW_IMAGE_UPLOAD_ROOT') ?: __DIR__ . '/uploads');
-defined('LEGACY_IMAGE_UPLOAD_ROOT') || define('LEGACY_IMAGE_UPLOAD_ROOT', getenv('TTW_LEGACY_IMAGE_UPLOAD_ROOT') ?: (rtrim(LEGACY_APP_BASE_URL,'/')!==rtrim(APP_BASE_URL,'/') ? dirname(__DIR__) . '/uploads' : ''));
+// /New and the original root app share one canonical uploads directory.
+defined('IMAGE_UPLOAD_ROOT') || define('IMAGE_UPLOAD_ROOT', getenv('TTW_IMAGE_UPLOAD_ROOT') ?: (preg_match('~/New$~i',rtrim(APP_BASE_URL,'/')) ? dirname(__DIR__) : __DIR__) . '/uploads');
+defined('LEGACY_IMAGE_UPLOAD_ROOT') || define('LEGACY_IMAGE_UPLOAD_ROOT', getenv('TTW_LEGACY_IMAGE_UPLOAD_ROOT') ?: (preg_match('~/New$~i',rtrim(APP_BASE_URL,'/')) ? __DIR__ . '/uploads' : ''));
 const ASSET_VERSION = '20261109c';
 
 function db(): PDO
@@ -119,8 +120,8 @@ function public_upload_preview_url(?string $path, string $kind='header'): string
         return $url;
     }
 
-    $fullPath = __DIR__ . '/' . ltrim((string) $path, '/');
-    if (!is_file($fullPath)) {
+    $fullPath = upload_disk_path((string)$path);
+    if (!$fullPath) {
         return $url;
     }
 
@@ -165,17 +166,14 @@ function save_cropped_image(?string $dataUrl, string $fileName, string $date, ?s
     $fileName = preg_replace('/\.[A-Za-z0-9]+$/', '.' . $extension, $fileName);
     $safeName = preg_replace('/[^A-Za-z0-9_.-]/', '_', $fileName);
     $directory = upload_month_path($date);
-    if (!is_dir(__DIR__ . '/' . $directory)) {
-        mkdir(__DIR__ . '/' . $directory, 0775, true);
-    }
-
     $path = $directory . '/' . $safeName;
+    $fullPath = upload_disk_path($path,true);
     delete_local_upload($existing);
     delete_local_upload($path);
-    if (file_put_contents(__DIR__ . '/' . $path, $binary, LOCK_EX) === false) {
+    if (file_put_contents($fullPath, $binary, LOCK_EX) === false) {
         throw new RuntimeException('Image could not be saved.');
     }
-    clearstatcache(true, __DIR__ . '/' . $path);
+    clearstatcache(true, $fullPath);
 
     return $path;
 }
@@ -186,8 +184,10 @@ function delete_local_upload(?string $path): void
         return;
     }
 
-    $fullPath = realpath(__DIR__ . '/' . ltrim($path, '/'));
-    $uploadRoot = realpath(__DIR__ . '/uploads');
+    $normalized=uploaded_image_path($path);
+    if ($normalized===null) return;
+    $fullPath = realpath(IMAGE_UPLOAD_ROOT . '/' . substr($normalized,8));
+    $uploadRoot = realpath(IMAGE_UPLOAD_ROOT);
     if (!$fullPath || !$uploadRoot || strpos($fullPath, $uploadRoot . DIRECTORY_SEPARATOR) !== 0) {
         return;
     }

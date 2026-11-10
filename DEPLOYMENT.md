@@ -1,5 +1,10 @@
 # Deployment
 
+## Shared storage (web 0.2.3)
+
+For APP_BASE_URL ending /New, IMAGE_UPLOAD_ROOT defaults to ../uploads and LEGACY_IMAGE_UPLOAD_ROOT defaults to ./uploads. All writes use the shared root, while reads also support old New-only images. Explicit configuration overrides still take precedence; review earlier custom paths. PHP must be able to write shared uploads. The root manual app continues using its existing paths. See docs/UPDATE_0.2.3.md.
+
+
 ## Temporary automation images (0.2.2)
 
 New working images use uploads/temporary/YYYY/Mon, grouped by issue month; final images stay in uploads/YYYY/Mon. PHP creates folders automatically. Old paths remain readable. Delete temporary month folders only after all related jobs/imports are applied and no unsaved promotion needs them. Restart continuous workers after deployment. See docs/UPDATE_0.2.2.md.

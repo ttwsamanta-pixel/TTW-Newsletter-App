@@ -37,6 +37,34 @@ function uploaded_image_path(string $value): ?string {
     return $path;
 }
 
+/** Resolve shared uploads for writes and shared/old-New paths for existing jobs. */
+function upload_disk_path(string $path, bool $write=false): ?string {
+    $normalized=uploaded_image_path($path);
+    if ($normalized===null) throw new InvalidArgumentException('Invalid uploaded image path.');
+    $relative=substr($normalized,8);
+    foreach (array_unique($write ? [IMAGE_UPLOAD_ROOT] : [IMAGE_UPLOAD_ROOT,LEGACY_IMAGE_UPLOAD_ROOT]) as $directory) {
+        if ($directory==='') continue;
+        if ($write && !is_dir($directory) && !@mkdir($directory,0775,true) && !is_dir($directory)) throw new RuntimeException('Shared uploads folder could not be created. Check PHP permissions.');
+        $root=realpath($directory);
+        if (!$root) continue;
+        $target=$root . DIRECTORY_SEPARATOR . str_replace('/',DIRECTORY_SEPARATOR,$relative);
+        if ($write) {
+            // Check each existing ancestor before creating folders, including symlinks.
+            $parent=dirname($target); $ancestor=$parent;
+            while (!file_exists($ancestor)) $ancestor=dirname($ancestor);
+            $resolved=realpath($ancestor);
+            if (!$resolved || ($resolved!==$root && !str_starts_with($resolved,$root.DIRECTORY_SEPARATOR))) throw new RuntimeException('Upload directory escapes shared uploads.');
+            if (!is_dir($parent) && !@mkdir($parent,0775,true) && !is_dir($parent)) throw new RuntimeException('Image folder could not be created. Check PHP permissions.');
+            if (is_link($target)) throw new RuntimeException('Image target must not be a symbolic link.');
+            return $target;
+        }
+        $file=realpath($target);
+        if ($file && str_starts_with($file,$root.DIRECTORY_SEPARATOR) && is_file($file) && is_readable($file)) return $file;
+    }
+    if ($write) throw new RuntimeException('Shared uploads folder is unavailable.');
+    return null;
+}
+
 function image_placeholder(string $kind): array {
     $sizes=['header'=>[610,380],'pick'=>[350,291],'promotion'=>[200,170],'profile'=>[128,128]];
     [$width,$height]=$sizes[$kind] ?? $sizes['header'];
@@ -52,7 +80,7 @@ function image_placeholder(string $kind): array {
     return ['bytes'=>$bytes,'mime'=>'image/png','source'=>'placeholder','modified'=>0];
 }
 
-/** New uploads first, original application's uploads second, real placeholder last. No HTTP requests. */
+/** Shared uploads first, old New-only uploads second, real placeholder last. No HTTP requests. */
 function resolve_uploaded_image(string $path, string $kind='header'): array {
     $normalized=uploaded_image_path($path);
     if ($normalized===null) return image_placeholder($kind);

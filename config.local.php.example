@@ -7,6 +7,9 @@ define('DB_PASS', 'YOUR_DATABASE_PASSWORD');
 // Constants also work on hosting where putenv() is disabled.
 define('APP_BASE_URL', 'https://newsletter.travelandtourworld.com/New');
 define('TTW_API_SECRET', 'REPLACE_WITH_A_LONG_RANDOM_SECRET');
-// Optional only when the original uploads folder is not ../uploads relative to New:
-// define('LEGACY_IMAGE_UPLOAD_ROOT', '/absolute/path/to/public_html/uploads');
+// Optional overrides only for a nonstandard server layout:
+// Shared read/write directory (default for /New: ../uploads):
+// define('IMAGE_UPLOAD_ROOT', '/absolute/path/to/public_html/uploads');
+// Old New-only files remain readable here (default for /New: ./uploads):
+// define('LEGACY_IMAGE_UPLOAD_ROOT', '/absolute/path/to/public_html/New/uploads');
 // define('LEGACY_APP_BASE_URL', 'https://newsletter.travelandtourworld.com');

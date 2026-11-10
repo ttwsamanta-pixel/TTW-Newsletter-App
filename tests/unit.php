@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+define('IMAGE_UPLOAD_ROOT',__DIR__.'/.runtime/unit-uploads');
 require_once dirname(__DIR__).'/automation/fetcher.php';
 require_once dirname(__DIR__).'/includes/security.php';
 require_once dirname(__DIR__).'/newsletter_renderer.php';
@@ -52,7 +53,7 @@ check((bool)$mixed['errors'],'Section import rejects links under a different sec
 foreach(['https://127.0.0.1/test','https://www.travelandtourworld.com.evil.test/test','http://www.travelandtourworld.com/test','https://user@www.travelandtourworld.com/test'] as $unsafe){try{safe_fetch($unsafe);check(false,'Unsafe URL permitted');}catch(RuntimeException $e){check(true,'Unsafe URL blocked');}}
 try{process_image('not an image','2026-11-06',610,380);check(false,'Invalid image permitted');}catch(RuntimeException $e){check(true,'Invalid image rejected');}
 check(valid_issue_date('2026-11-06') && !valid_issue_date('2026-02-30'),'Strict date validation');
-$image=missing_image('2026-11-06',610,380);$size=getimagesize(dirname(__DIR__).'/'.$image);check($size[0]===610 && $size[1]===380,'Warning placeholder has real header dimensions');delete_local_upload($image);
+$image=missing_image('2026-11-06',610,380);$size=getimagesize(upload_disk_path($image));check($size[0]===610 && $size[1]===380,'Warning placeholder has real header dimensions');delete_local_upload($image);
 $n=['newsletter_date'=>'2026-11-06','edition'=>'M','subject_title'=>'Fixture subject','hidden_text'=>'Fixture description','header_title'=>'Original Header','header_description'=>'Original description','header_url'=>$base.'test/','header_image'=>'uploads/fixture.jpg','pick_news'=>[],'more_news'=>[],'categories'=>[],'promotion_enabled'=>0];
 $rendered=render_newsletter($n);check(str_contains($rendered,'Original Header') && str_contains($rendered,'DAILY TRAVEL NEWS UPDATE'),'Existing renderer smoke check');
 echo "PASS: $checks checks\n";

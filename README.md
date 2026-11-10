@@ -1,5 +1,10 @@
 # TTW Newsletter Manager
 
+## Shared uploads web update 0.2.3
+
+New /New newsletters and the installed Android app now save final images in the original root app uploads/YYYY/Mon and working images in uploads/temporary/YYYY/Mon. Old New-only files remain readable. Deploy the v0.2.3 web package inside /New; no SQL or APK reinstall is needed. See [deployment instructions](docs/UPDATE_0.2.3.md).
+
+
 The existing PHP/MySQL newsletter editor now has a deterministic automation backend, category master, mobile REST API and a Flutter Android/iOS application styled after the supplied TTW reference. The six-step editor and original `newsletter_renderer.php` remain the manual creation and rendering surfaces. No AI service or email sending is included.
 
 Start with [the source inspection](ARCHITECTURE.md), [database migration](DATABASE_MIGRATION.md), [deployment](DEPLOYMENT.md), [API reference](API_DOCUMENTATION.md) and [mobile setup](MOBILE_SETUP.md).

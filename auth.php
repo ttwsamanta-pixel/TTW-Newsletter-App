@@ -253,11 +253,8 @@ function save_profile_photo(?array $file, ?string $existing = null): ?string
     }
 
     $directory = 'uploads/profiles';
-    if (!is_dir(__DIR__ . '/' . $directory)) {
-        mkdir(__DIR__ . '/' . $directory, 0775, true);
-    }
     $path = $directory . '/' . bin2hex(random_bytes(12)) . '.' . $extension;
-    move_uploaded_file($tmp, __DIR__ . '/' . $path);
+    if (!move_uploaded_file($tmp, upload_disk_path($path,true))) throw new RuntimeException('Profile image could not be saved.');
     return $path;
 }
 

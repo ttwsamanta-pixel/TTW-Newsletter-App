@@ -1,5 +1,10 @@
 # Next steps
 
+## Latest web update: 0.2.3
+
+Upload the full v0.2.3 web ZIP inside /New, or use the changed-files ZIP for an existing v0.2.2 deployment. Preserve config.local.php and old uploads. PHP needs write access to the shared public_html/uploads folder. Final and temporary images for newly created newsletters use that root folder. No SQL or app reinstall. Follow docs/UPDATE_0.2.3.md; earlier release notes below are historical.
+
+
 For separate working image folders, follow **docs/UPDATE_0.2.2.md**. Extract the full v0.2.2 ZIP inside `/New/`, keeping config.local.php, uploads and storage. New auto images go into uploads/temporary/YYYY/Mon; final images keep their existing location. No SQL import is required. Install the matching APK after deploying the backend.
 
 1. Back up the existing hosted PHP app and newsletter database.

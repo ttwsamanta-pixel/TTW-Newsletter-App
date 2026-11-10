@@ -16,12 +16,13 @@ function validate_promotion_upload(array $input, array $user): void {
     if ($path === '') return;
     if (!is_automation_image_path($path)
         || !hash_equals(promotion_signature($path,(int)$user['id']), (string)($input['promotion_signature'] ?? ''))
-        || !is_file(dirname(__DIR__) . '/' . $path)) throw new InvalidArgumentException('Upload the promotion again.');
+        || !upload_disk_path($path)) throw new InvalidArgumentException('Upload the promotion again.');
     if (!filter_var($input['promotion_url'] ?? '', FILTER_VALIDATE_URL) || parse_url($input['promotion_url'],PHP_URL_SCHEME) !== 'https') throw new InvalidArgumentException('Promotion URL must use HTTPS.');
 }
 function automation_image_data(string $path): string {
     if (!is_automation_image_path($path)) throw new InvalidArgumentException('Processed image path is invalid.');
-    $bytes = @file_get_contents(dirname(__DIR__) . '/' . $path);
+    $file=upload_disk_path($path);
+    $bytes = $file ? @file_get_contents($file) : false;
     if ($bytes === false) throw new InvalidArgumentException('Processed image is missing. Retry this import.');
     return 'data:image/jpeg;base64,' . base64_encode($bytes);
 }

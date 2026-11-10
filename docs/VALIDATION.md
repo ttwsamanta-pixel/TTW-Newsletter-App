@@ -1,5 +1,10 @@
 # Validation record
 
+## Shared uploads web update 0.2.3
+
+Passed 12 shared storage checks, 13 temporary image checks, 38 unit checks and 25 image fallback checks, plus PHP syntax validation. No production data used. Mobile code is unchanged; deployed Android 0.2.2 works with the updated backend. See UPDATE_0.2.3.md.
+
+
 ## Temporary image folders - 0.2.2
 
 Passed 13 focused temporary-file checks, 38 existing unit checks and 25 image fallback checks. Coverage includes final byte-preserving copies, old jobs/promotions, new paths and final-image survival after working-file deletion. Android code 5 / version 0.2.2 built successfully. No production database or uploaded files were modified.
